@@ -22,7 +22,7 @@ export default function HomePage() {
         <h2 className="text-lg font-medium text-slate-700">テーブル一覧</h2>
         {tables.length === 0 ? (
           <p className="mt-2 text-sm text-slate-500">
-            csvs ディレクトリ内に対応するCSVファイルが見つかりませんでした。
+            テーブルが定義されていません。lib/tables.ts を確認してください。
           </p>
         ) : (
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -32,9 +32,12 @@ export default function HomePage() {
                   href={`/${table.tableName}`}
                   className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow"
                 >
-                  <h3 className="text-xl font-semibold capitalize">
-                    {table.tableName}
+                  <h3 className="text-xl font-semibold">
+                    {table.displayName}
                   </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    テーブル: {table.tableName}
+                  </p>
                   <p className="mt-2 text-sm text-slate-500">
                     {table.columns.length} 列
                   </p>

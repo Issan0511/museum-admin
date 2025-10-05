@@ -57,6 +57,10 @@ export async function PUT(
       throw new Error(`${primaryKey} が必要です`);
     }
 
+    console.log('[PUT] Table:', params.table);
+    console.log('[PUT] PrimaryKey:', primaryKey, '=', primaryValue);
+    console.log('[PUT] Values:', values);
+
     const client = getClient();
     const tableQuery = client.from(params.table as string) as any;
     const { data, error } = await tableQuery
@@ -65,13 +69,16 @@ export async function PUT(
       .select()
       .single();
 
+    console.log('[PUT] Response - Data:', data);
+    console.log('[PUT] Response - Error:', error);
+
     if (error) {
       throw error;
     }
 
     return Response.json({ data });
   } catch (error) {
-    console.error(error);
+    console.error('[PUT] Exception:', error);
     const message = error instanceof Error ? error.message : "更新に失敗しました";
     return Response.json({ error: message }, { status: 400 });
   }

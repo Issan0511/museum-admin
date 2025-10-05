@@ -1,41 +1,76 @@
-import fs from "fs";
-import path from "path";
-import { parse } from "csv-parse/sync";
-
 export type TableMetadata = {
   tableName: string;
-  csvPath: string;
+  displayName: string;
   columns: string[];
 };
 
-const CSV_DIR = path.join(process.cwd(), "csvs");
+// CSVファイルに基づいて手動でテーブル定義
+const TABLES: TableMetadata[] = [
+  {
+    tableName: "calendar",
+    displayName: "カレンダー",
+    columns: ["demo_date", "template_id"],
+  },
+  {
+    tableName: "crafts",
+    displayName: "工芸品",
+    columns: [
+      "id",
+      "slug",
+      "name_ja",
+      "name_en",
+      "name_zh",
+      "kana",
+      "summary_ja",
+      "summary_en",
+      "summary_zh",
+      "description_ja",
+      "description_en",
+      "description_zh",
+      "youtube_id",
+      "shop_collection",
+      "details_path",
+      "details_format",
+      "created_at",
+    ],
+  },
+  {
+    tableName: "events",
+    displayName: "イベント",
+    columns: [
+      "id",
+      "name_ja",
+      "name_en",
+      "name_zh",
+      "start_date",
+      "end_date",
+      "detail_ja",
+      "detail_en",
+      "detail_zh",
+      "created_at",
+    ],
+  },
+  {
+    tableName: "demo_templates",
+    displayName: "デモテンプレート",
+    columns: [
+      "id",
+      "name_ja",
+      "name_en",
+      "name_zh",
+      "img",
+      "description_ja",
+      "description_en",
+      "description_zh",
+      "created_at",
+    ],
+  },
+];
 
 export function getAvailableTables(): TableMetadata[] {
-  if (!fs.existsSync(CSV_DIR)) {
-    return [];
-  }
-
-  return fs
-    .readdirSync(CSV_DIR)
-    .filter((file) => file.endsWith("_rows.csv"))
-    .map((file) => {
-      const tableName = file.replace(/_rows\\.csv$/i, "");
-      const csvPath = path.join(CSV_DIR, file);
-      const fileContents = fs.readFileSync(csvPath, "utf-8");
-      const [header] = parse(fileContents, {
-        bom: true,
-        columns: false,
-        skip_empty_lines: true,
-        to_line: 1,
-      }) as string[][];
-      const columns = header ?? [];
-
-      return { tableName, csvPath, columns } satisfies TableMetadata;
-    })
-    .sort((a, b) => a.tableName.localeCompare(b.tableName));
+  return TABLES.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
 export function getTableMetadata(tableName: string): TableMetadata | undefined {
-  const tables = getAvailableTables();
-  return tables.find((table) => table.tableName === tableName);
+  return TABLES.find((table) => table.tableName === tableName);
 }
