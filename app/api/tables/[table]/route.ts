@@ -25,8 +25,8 @@ export async function POST(
     validateTableName(params.table);
     const payload = await request.json();
     const client = getClient();
-    const { data, error } = await client
-      .from(params.table)
+    const tableQuery = client.from(params.table as string) as any;
+    const { data, error } = await tableQuery
       .insert(payload.values ?? payload)
       .select()
       .single();
@@ -99,8 +99,8 @@ export async function DELETE(
     }
 
     const client = getClient();
-    const { error } = await client
-      .from(params.table)
+    const tableQuery = client.from(params.table as string) as any;
+    const { error } = await tableQuery
       .delete()
       .eq(primaryKey, primaryValue);
 
