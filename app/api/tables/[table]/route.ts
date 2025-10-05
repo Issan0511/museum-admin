@@ -58,9 +58,9 @@ export async function PUT(
     }
 
     const client = getClient();
-    const { data, error } = await client
-      .from(params.table)
-      .update(values)
+    const tableQuery = client.from(params.table as string) as any;
+    const { data, error } = await tableQuery
+      .update(values as Record<string, unknown>)
       .eq(primaryKey, primaryValue)
       .select()
       .single();
