@@ -58,7 +58,6 @@ const TABLES: TableMetadata[] = [
       "name_ja",
       "name_en",
       "name_zh",
-      "img",
       "description_ja",
       "description_en",
       "description_zh",
