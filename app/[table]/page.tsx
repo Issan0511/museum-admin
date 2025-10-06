@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { getTableMetadata } from "@/lib/tables";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import CalendarTableEditor from "@/components/CalendarTableEditor";
+import ImageThumbnail from "@/components/ImageThumbnail";
 import { inferPrimaryKey, mergeColumns } from "@/lib/tableUtils";
+import { getImageUrl, hasImageSupport } from "@/lib/imageUtils";
 
 // キャッシュを無効化
 export const dynamic = 'force-dynamic';
@@ -140,6 +142,13 @@ export default async function TablePage({
                   (typeof row["NAME_JA"] === "string" && row["NAME_JA"]) ||
                   `${primaryValue}`;
 
+                const imageUrl = hasImageSupport(metadata.tableName) && 
+                  primaryValue !== undefined && 
+                  primaryValue !== null &&
+                  (typeof primaryValue === 'string' || typeof primaryValue === 'number')
+                  ? getImageUrl(metadata.tableName, primaryValue)
+                  : null;
+
                 return (
                   <li key={key} className="bg-white">
                     {primaryValue === undefined || primaryValue === null ? (
@@ -154,7 +163,16 @@ export default async function TablePage({
                         )}`}
                         className="flex items-center justify-between px-4 py-3 text-sm text-slate-700 transition hover:bg-slate-50"
                       >
-                        <span className="font-medium">{displayName}</span>
+                        <div className="flex items-center gap-3">
+                          {imageUrl && (
+                            <ImageThumbnail
+                              src={imageUrl}
+                              alt={displayName}
+                              className="h-12 w-12 rounded object-cover"
+                            />
+                          )}
+                          <span className="font-medium">{displayName}</span>
+                        </div>
                         <span className="text-xs text-slate-400">編集</span>
                       </Link>
                     )}
