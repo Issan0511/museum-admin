@@ -5,6 +5,10 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import CalendarTableEditor from "@/components/CalendarTableEditor";
 import { inferPrimaryKey, mergeColumns } from "@/lib/tableUtils";
 
+// キャッシュを無効化
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function fetchRows(tableName: string) {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase.from(tableName).select("*");

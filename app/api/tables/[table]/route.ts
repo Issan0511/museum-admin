@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
+// キャッシュを無効化
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function getClient() {
   return createServiceRoleClient();
 }

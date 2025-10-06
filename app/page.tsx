@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getAvailableTables } from "@/lib/tables";
 
+// キャッシュを無効化
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function HomePage() {
   const tables = getAvailableTables();
 
