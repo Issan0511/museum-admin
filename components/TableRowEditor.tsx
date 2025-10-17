@@ -48,11 +48,29 @@ export default function TableRowEditor({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageRefreshKey, setImageRefreshKey] = useState(0);
+  const [currentPrimaryValue, setCurrentPrimaryValue] = useState<string | number | null>(
+    primaryValue ?? null
+  );
+  const [isDuplicateId, setIsDuplicateId] = useState<boolean>(false);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState<boolean>(false);
 
   const hasImage = hasImageSupport(tableName);
-  const imageUrl = hasImage && primaryValue && 
-    (typeof primaryValue === 'string' || typeof primaryValue === 'number')
-    ? getImageUrl(tableName, primaryValue)
+  
+  // 新規作成モードでは、主キーフィールドの入力値を使用
+  const getPrimaryValueFromInput = () => {
+    if (mode === "create" && !currentPrimaryValue) {
+      const inputValue = values[primaryKey];
+      if (inputValue && String(inputValue).trim() !== '') {
+        return inputValue;
+      }
+    }
+    return null;
+  };
+
+  const effectivePrimaryValue = currentPrimaryValue ?? primaryValue ?? getPrimaryValueFromInput();
+  const imageUrl = hasImage && effectivePrimaryValue && 
+    (typeof effectivePrimaryValue === 'string' || typeof effectivePrimaryValue === 'number')
+    ? getImageUrl(tableName, effectivePrimaryValue)
     : null;
 
   // デバッグ用ログ
@@ -60,21 +78,62 @@ export default function TableRowEditor({
     console.log('TableRowEditor - Debug Info:', {
       tableName,
       primaryValue,
+      currentPrimaryValue,
+      effectivePrimaryValue,
       hasImage,
       imageUrl,
     });
-  }, [tableName, primaryValue, hasImage, imageUrl]);
+  }, [tableName, primaryValue, currentPrimaryValue, effectivePrimaryValue, hasImage, imageUrl]);
 
   const handleChange = (column: string, value: string) => {
     setValues((prev) => ({
       ...prev,
       [column]: value,
     }));
+    
+    // 主キーフィールドが変更された場合、画像の存在チェックと重複チェックをリセット
+    if (column === primaryKey) {
+      if (hasImage) {
+        setImageExists(null);
+      }
+      if (mode === "create") {
+        setIsDuplicateId(false);
+      }
+    }
   };
 
   useEffect(() => {
     setValues(buildInitialValues(sortedColumns, initialValues));
   }, [initialValues, sortedColumns]);
+
+  // 主キーの重複チェック（新規作成モードのみ）
+  useEffect(() => {
+    if (mode !== "create" || !effectivePrimaryValue) {
+      setIsDuplicateId(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsCheckingDuplicate(true);
+      try {
+        const response = await fetch(
+          `/api/tables/${tableName}?primaryKey=${encodeURIComponent(primaryKey)}&id=${encodeURIComponent(String(effectivePrimaryValue))}`
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          // データが存在する場合は重複と判定
+          setIsDuplicateId(result.exists === true);
+        }
+      } catch (error) {
+        console.error('重複チェックエラー:', error);
+      } finally {
+        setIsCheckingDuplicate(false);
+      }
+    }, 500); // 500msの遅延
+
+    return () => clearTimeout(timeoutId);
+  }, [effectivePrimaryValue, tableName, primaryKey, mode]);
 
   // 画像の存在チェック
   useEffect(() => {
@@ -83,13 +142,24 @@ export default function TableRowEditor({
       return;
     }
 
-    const img = new Image();
-    img.onload = () => setImageExists(true);
-    img.onerror = () => setImageExists(false);
-    img.src = imageUrl;
+    // 入力中の頻繁なチェックを避けるため、少し遅延を入れる
+    const timeoutId = setTimeout(() => {
+      const img = new Image();
+      img.onload = () => setImageExists(true);
+      img.onerror = () => setImageExists(false);
+      img.src = imageUrl;
+    }, 500); // 500msの遅延
+
+    return () => clearTimeout(timeoutId);
   }, [imageUrl, imageRefreshKey]);
 
   const handleSubmit = async () => {
+    // 新規作成モードで重複IDがある場合は保存を防ぐ
+    if (mode === "create" && isDuplicateId) {
+      setError(`${primaryKey}「${effectivePrimaryValue}」は既に存在します。別の値を入力してください。`);
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage(null);
     setError(null);
@@ -122,6 +192,7 @@ export default function TableRowEditor({
 
       if (mode === "create" && data && data[primaryKey] !== undefined) {
         const newPrimaryValue = data[primaryKey];
+        setCurrentPrimaryValue(newPrimaryValue);
         router.replace(
           `/${tableName}/${encodeURIComponent(String(newPrimaryValue))}`
         );
@@ -192,7 +263,7 @@ export default function TableRowEditor({
   };
 
   const handleImageUpload = async () => {
-    if (!selectedFile || !primaryValue) {
+    if (!selectedFile || !effectivePrimaryValue) {
       setError('ファイルが選択されていません');
       return;
     }
@@ -204,7 +275,7 @@ export default function TableRowEditor({
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('primaryValue', String(primaryValue));
+      formData.append('primaryValue', String(effectivePrimaryValue));
 
       const response = await fetch(`/api/tables/${tableName}/image`, {
         method: 'POST',
@@ -240,7 +311,7 @@ export default function TableRowEditor({
   };
 
   const handleImageDelete = async () => {
-    if (!primaryValue) {
+    if (!effectivePrimaryValue) {
       setError('主キーの値が見つかりません');
       return;
     }
@@ -257,7 +328,7 @@ export default function TableRowEditor({
       const response = await fetch(`/api/tables/${tableName}/image`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ primaryValue }),
+        body: JSON.stringify({ primaryValue: effectivePrimaryValue }),
       });
 
       if (!response.ok) {
@@ -283,7 +354,14 @@ export default function TableRowEditor({
 
   return (
     <div className="space-y-6">
-      {hasImage && mode === "edit" && primaryValue && (
+      {hasImage && !effectivePrimaryValue && mode === "create" && (
+        <div className="rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+          <p className="font-medium mb-1">📷 画像のアップロードについて</p>
+          <p>このテーブルは画像をサポートしています。主キー（{primaryKey}）を入力すると、既存の画像があるか確認できます。データを保存後に画像をアップロードすることもできます。</p>
+        </div>
+      )}
+
+      {hasImage && effectivePrimaryValue && (
         <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-500">
             画像管理
@@ -292,7 +370,7 @@ export default function TableRowEditor({
           {/* デバッグ情報 */}
           <div className="mb-4 rounded bg-slate-50 p-3 text-xs text-slate-600">
             <p><strong>テーブル名:</strong> {tableName}</p>
-            <p><strong>主キーの値:</strong> {String(primaryValue)}</p>
+            <p><strong>主キーの値:</strong> {String(effectivePrimaryValue)}</p>
             <p><strong>画像サポート:</strong> {hasImage ? 'あり' : 'なし'}</p>
             <p className="mt-2"><strong>画像URL:</strong></p>
             <p className="break-all font-mono">{imageUrl || '未生成'}</p>
@@ -326,7 +404,7 @@ export default function TableRowEditor({
               />
               <div className="flex-1 space-y-2 text-sm text-slate-600">
                 <p className="font-medium">現在の画像</p>
-                <p>ファイル名: {primaryValue}.png</p>
+                <p>ファイル名: {effectivePrimaryValue}.png</p>
                 <p className="text-xs text-slate-500">
                   新しい画像をアップロードすると、この画像は上書きされます
                 </p>
@@ -388,6 +466,14 @@ export default function TableRowEditor({
         <div className="space-y-4">
           {sortedColumns.map((column) => {
             const inputId = `${column}-input`;
+            const isPrimaryKeyField = column === primaryKey;
+            const showDuplicateWarning = isPrimaryKeyField && mode === "create" && isDuplicateId;
+            const showCheckingStatus = isPrimaryKeyField && mode === "create" && isCheckingDuplicate;
+            
+            // 日付フィールドかどうかを判定
+            const isDateField = column.toLowerCase().includes('date');
+            const inputType = isDateField ? 'date' : 'text';
+            
             return (
               <div key={column} className="space-y-1">
                 <label
@@ -395,14 +481,34 @@ export default function TableRowEditor({
                   className="block text-xs font-medium uppercase tracking-wide text-slate-500"
                 >
                   {column}
+                  {isPrimaryKeyField && mode === "create" && (
+                    <span className="ml-2 text-red-500">*</span>
+                  )}
                 </label>
-                <input
-                  id={inputId}
-                  className="w-full rounded border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                  value={values[column] ?? ""}
-                  onChange={(event) => handleChange(column, event.target.value)}
-                  disabled={isSubmitting}
-                />
+                <div className="relative">
+                  <input
+                    id={inputId}
+                    type={inputType}
+                    className={`w-full rounded border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 ${
+                      showDuplicateWarning
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                        : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-200'
+                    }`}
+                    value={values[column] ?? ""}
+                    onChange={(event) => handleChange(column, event.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  {showCheckingStatus && (
+                    <span className="absolute right-3 top-2.5 text-xs text-slate-500">
+                      確認中...
+                    </span>
+                  )}
+                </div>
+                {showDuplicateWarning && (
+                  <p className="text-xs text-red-600">
+                    ⚠️ この{column}は既に使用されています
+                  </p>
+                )}
               </div>
             );
           })}
@@ -426,7 +532,12 @@ export default function TableRowEditor({
           type="button"
           onClick={handleSubmit}
           className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:bg-indigo-300"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (mode === "create" && isDuplicateId)}
+          title={
+            mode === "create" && isDuplicateId
+              ? "重複する主キーがあるため保存できません"
+              : undefined
+          }
         >
           保存
         </button>

@@ -21,6 +21,43 @@ function validatePrimaryKey(primaryKey: string | undefined) {
   }
 }
 
+// IDの存在チェック用のGETエンドポイント
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { table: string } }
+) {
+  try {
+    validateTableName(params.table);
+    
+    const { searchParams } = new URL(request.url);
+    const primaryKey = searchParams.get('primaryKey');
+    const primaryValue = searchParams.get('id');
+    
+    if (!primaryKey || !primaryValue) {
+      return Response.json({ error: "primaryKeyとidが必要です" }, { status: 400 });
+    }
+    
+    validatePrimaryKey(primaryKey);
+    
+    const client = getClient();
+    const tableQuery = client.from(params.table as string) as any;
+    const { data, error } = await tableQuery
+      .select('*')
+      .eq(primaryKey, primaryValue)
+      .maybeSingle();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return Response.json({ exists: data !== null, data });
+  } catch (error) {
+    console.error(error);
+    const message = error instanceof Error ? error.message : "チェックに失敗しました";
+    return Response.json({ error: message }, { status: 400 });
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { table: string } }

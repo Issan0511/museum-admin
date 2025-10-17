@@ -3,9 +3,13 @@ export function mergeColumns(
   rows: Record<string, unknown>[]
 ) {
   const set = new Set(metadataColumns);
+  const excludeColumns = ['created_at', 'updated_at']; // システムカラムを除外
+  
   rows.forEach((row) => {
     Object.keys(row ?? {}).forEach((key) => {
-      set.add(key);
+      if (!excludeColumns.includes(key)) {
+        set.add(key);
+      }
     });
   });
   return Array.from(set);

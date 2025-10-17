@@ -31,7 +31,6 @@ const TABLES: TableMetadata[] = [
       "shop_collection",
       "details_path",
       "details_format",
-      "created_at",
     ],
   },
   {
@@ -47,7 +46,6 @@ const TABLES: TableMetadata[] = [
       "detail_ja",
       "detail_en",
       "detail_zh",
-      "created_at",
     ],
   },
   {
@@ -61,7 +59,6 @@ const TABLES: TableMetadata[] = [
       "description_ja",
       "description_en",
       "description_zh",
-      "created_at",
     ],
   },
 ];
