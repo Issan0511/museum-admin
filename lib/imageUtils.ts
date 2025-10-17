@@ -1,4 +1,4 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SUPABASE_URL;
 
 // テーブル名からStorageバケット名へのマッピング
 const TABLE_TO_BUCKET_MAP: Record<string, string> = {
