@@ -1,4 +1,5 @@
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SUPABASE_URL;
+// Supabase URLは公開情報なのでNEXT_PUBLIC_を使用
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // テーブル名からStorageバケット名へのマッピング
 const TABLE_TO_BUCKET_MAP: Record<string, string> = {

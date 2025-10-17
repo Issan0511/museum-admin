@@ -62,7 +62,6 @@ export default function TableRowEditor({
       primaryValue,
       hasImage,
       imageUrl,
-      supabaseUrl: process.env.SUPABASE_URL,
     });
   }, [tableName, primaryValue, hasImage, imageUrl]);
 
@@ -295,7 +294,6 @@ export default function TableRowEditor({
             <p><strong>テーブル名:</strong> {tableName}</p>
             <p><strong>主キーの値:</strong> {String(primaryValue)}</p>
             <p><strong>画像サポート:</strong> {hasImage ? 'あり' : 'なし'}</p>
-            <p><strong>Supabase URL:</strong> {process.env.SUPABASE_URL || '未設定'}</p>
             <p className="mt-2"><strong>画像URL:</strong></p>
             <p className="break-all font-mono">{imageUrl || '未生成'}</p>
             <p className="mt-2"><strong>画像の状態:</strong> {
