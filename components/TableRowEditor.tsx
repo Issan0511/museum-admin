@@ -54,7 +54,14 @@ export default function TableRowEditor({
   const [isDuplicateId, setIsDuplicateId] = useState<boolean>(false);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState<boolean>(false);
 
+  // マークダウンファイル関連のstate
+  const [selectedMarkdownFile, setSelectedMarkdownFile] = useState<File | null>(null);
+  const [isUploadingMarkdown, setIsUploadingMarkdown] = useState(false);
+  const [markdownExists, setMarkdownExists] = useState<boolean | null>(null);
+  const [markdownContent, setMarkdownContent] = useState<string | null>(null);
+
   const hasImage = hasImageSupport(tableName);
+  const hasMarkdown = tableName === 'crafts'; // craftsテーブルのみマークダウンをサポート
   
   // 新規作成モードでは、主キーフィールドの入力値を使用
   const getPrimaryValueFromInput = () => {
@@ -152,6 +159,38 @@ export default function TableRowEditor({
 
     return () => clearTimeout(timeoutId);
   }, [imageUrl, imageRefreshKey]);
+
+  // マークダウンファイルの存在チェック
+  useEffect(() => {
+    if (!hasMarkdown || !effectivePrimaryValue) {
+      setMarkdownExists(false);
+      setMarkdownContent(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/tables/${tableName}/markdown?primaryValue=${encodeURIComponent(String(effectivePrimaryValue))}`
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          setMarkdownExists(result.exists);
+          setMarkdownContent(result.content || null);
+        } else if (response.status === 404) {
+          setMarkdownExists(false);
+          setMarkdownContent(null);
+        }
+      } catch (error) {
+        console.error('マークダウンファイルの確認エラー:', error);
+        setMarkdownExists(false);
+        setMarkdownContent(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [hasMarkdown, effectivePrimaryValue, tableName]);
 
   const handleSubmit = async () => {
     // 新規作成モードで重複IDがある場合は保存を防ぐ
@@ -352,6 +391,120 @@ export default function TableRowEditor({
     }
   };
 
+  // マークダウンファイル選択ハンドラ
+  const handleMarkdownFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // マークダウンファイルかチェック
+      if (!file.name.endsWith('.md')) {
+        setError('マークダウンファイル(.md)を選択してください');
+        return;
+      }
+      setSelectedMarkdownFile(file);
+      setError(null);
+    }
+  };
+
+  // マークダウンファイルアップロードハンドラ
+  const handleMarkdownUpload = async () => {
+    if (!selectedMarkdownFile || !effectivePrimaryValue) {
+      setError('ファイルが選択されていません');
+      return;
+    }
+
+    setIsUploadingMarkdown(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedMarkdownFile);
+      formData.append('primaryValue', String(effectivePrimaryValue));
+
+      const response = await fetch(`/api/tables/${tableName}/markdown`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error ?? response.statusText);
+      }
+
+      const result = await response.json();
+      setMessage(result.message || 'マークダウンファイルをアップロードしました');
+      setSelectedMarkdownFile(null);
+      setMarkdownExists(true);
+      
+      // ファイルの内容を再取得
+      const contentResponse = await fetch(
+        `/api/tables/${tableName}/markdown?primaryValue=${encodeURIComponent(String(effectivePrimaryValue))}`
+      );
+      if (contentResponse.ok) {
+        const contentResult = await contentResponse.json();
+        setMarkdownContent(contentResult.content || null);
+      }
+      
+      // ファイル入力をリセット
+      const fileInput = document.getElementById('markdown-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } catch (uploadError) {
+      console.error(uploadError);
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'マークダウンファイルのアップロードに失敗しました'
+      );
+    } finally {
+      setIsUploadingMarkdown(false);
+    }
+  };
+
+  // マークダウンファイル削除ハンドラ
+  const handleMarkdownDelete = async () => {
+    if (!effectivePrimaryValue) {
+      setError('主キーの値が見つかりません');
+      return;
+    }
+
+    if (!confirm('マークダウンファイルを削除してもよろしいですか？')) {
+      return;
+    }
+
+    setIsUploadingMarkdown(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/tables/${tableName}/markdown`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ primaryValue: effectivePrimaryValue }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload.error ?? response.statusText);
+      }
+
+      const result = await response.json();
+      setMessage(result.message || 'マークダウンファイルを削除しました');
+      setMarkdownExists(false);
+      setMarkdownContent(null);
+    } catch (deleteError) {
+      console.error(deleteError);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'マークダウンファイルの削除に失敗しました'
+      );
+    } finally {
+      setIsUploadingMarkdown(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {hasImage && !effectivePrimaryValue && mode === "create" && (
@@ -455,6 +608,102 @@ export default function TableRowEditor({
                   disabled={isUploadingImage}
                 >
                   画像を削除
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasMarkdown && !effectivePrimaryValue && mode === "create" && (
+        <div className="rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+          <p className="font-medium mb-1">📝 マークダウンファイルのアップロードについて</p>
+          <p>このテーブルはマークダウンファイルをサポートしています。主キー（{primaryKey}）を入力すると、既存のファイルがあるか確認できます。データを保存後にファイルをアップロードすることもできます。</p>
+        </div>
+      )}
+
+      {hasMarkdown && effectivePrimaryValue && (
+        <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-medium uppercase tracking-wide text-slate-500">
+            マークダウンファイル管理
+          </h3>
+          
+          <div className="mb-4 rounded bg-slate-50 p-3 text-xs text-slate-600">
+            <p><strong>保存先:</strong> v1/object/public/craft_texts/{String(effectivePrimaryValue)}.md</p>
+            <p className="mt-2"><strong>ファイルの状態:</strong> {
+              markdownExists === null ? '確認中...' : 
+              markdownExists === true ? '存在する' : 
+              '存在しない'
+            }</p>
+          </div>
+
+          {markdownExists === true && markdownContent && (
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-700">現在のファイル</p>
+                <a
+                  href={`https://jwqyjhzrvrzxdqthvjtb.supabase.co/storage/v1/object/public/craft_texts/${effectivePrimaryValue}.md`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                >
+                  ファイルを開く
+                </a>
+              </div>
+              <div className="rounded border border-slate-200 bg-white p-4 max-h-64 overflow-auto">
+                <pre className="text-xs text-slate-700 whitespace-pre-wrap font-mono">
+                  {markdownContent}
+                </pre>
+              </div>
+              <p className="text-xs text-slate-500">
+                新しいファイルをアップロードすると、このファイルは上書きされます
+              </p>
+            </div>
+          )}
+
+          {markdownExists === false && (
+            <div className="mb-4 flex items-center justify-center rounded border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-sm text-slate-500">
+              マークダウンファイルなし
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <input
+                id="markdown-upload"
+                type="file"
+                accept=".md,text/markdown"
+                onChange={handleMarkdownFileSelect}
+                className="text-sm text-slate-600 file:mr-4 file:rounded file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+                disabled={isUploadingMarkdown}
+                aria-label="マークダウンファイルを選択"
+              />
+            </div>
+
+            {selectedMarkdownFile && (
+              <p className="text-sm text-slate-600">
+                選択ファイル: {selectedMarkdownFile.name}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleMarkdownUpload}
+                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:bg-indigo-300"
+                disabled={!selectedMarkdownFile || isUploadingMarkdown}
+              >
+                {isUploadingMarkdown ? 'アップロード中...' : 'ファイルをアップロード'}
+              </button>
+
+              {markdownExists && (
+                <button
+                  type="button"
+                  onClick={handleMarkdownDelete}
+                  className="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                  disabled={isUploadingMarkdown}
+                >
+                  ファイルを削除
                 </button>
               )}
             </div>
