@@ -87,7 +87,7 @@ export default async function TablePage({
           <p className="text-xs text-slate-500">主キー推定: {primaryKey}</p>
         </div>
         <Link
-          href="/"
+          href="/data"
           className="rounded border border-slate-200 px-3 py-1 text-sm text-slate-600 transition hover:bg-slate-100"
         >
           ← 一覧に戻る
