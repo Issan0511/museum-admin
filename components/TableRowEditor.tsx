@@ -36,7 +36,68 @@ export default function TableRowEditor({
     if (!unique.includes(primaryKey)) {
       unique.unshift(primaryKey);
     }
-    return unique;
+
+    const languageOrder = ["ja", "en", "zh", "ko", "fr", "es"] as const;
+    const languagePattern = new RegExp(
+      `^(.+)_(${languageOrder.join("|")})$`,
+      "i"
+    );
+
+    const result: string[] = [];
+    const languageGroups = new Map<string, string[]>();
+
+    unique.forEach((column) => {
+      const match = column.match(languagePattern);
+      if (!match) {
+        result.push(column);
+        return;
+      }
+
+      const [, base, langSuffix] = match;
+      const normalizedBase = base.toLowerCase();
+      const normalizedLang = langSuffix.toLowerCase();
+
+      if (!languageGroups.has(normalizedBase)) {
+        result.push(column);
+        languageGroups.set(normalizedBase, [column]);
+        return;
+      }
+
+      const group = languageGroups.get(normalizedBase)!;
+
+      const findColumnInGroup = (targetBase: string, targetLang: string) =>
+        group.findIndex(
+          (existingColumn) =>
+            existingColumn.toLowerCase() === `${targetBase}_${targetLang}`
+        );
+
+      let inserted = false;
+      const languageIndex = languageOrder.indexOf(
+        normalizedLang as (typeof languageOrder)[number]
+      );
+
+      for (let i = languageIndex - 1; i >= 0; i -= 1) {
+        const candidateLang = languageOrder[i];
+        const candidateIndex = findColumnInGroup(normalizedBase, candidateLang);
+        if (candidateIndex !== -1) {
+          const candidateColumn = group[candidateIndex];
+          const candidateResultIndex = result.indexOf(candidateColumn);
+          result.splice(candidateResultIndex + 1, 0, column);
+          group.splice(candidateIndex + 1, 0, column);
+          inserted = true;
+          break;
+        }
+      }
+
+      if (!inserted) {
+        const firstColumn = group[0];
+        const firstResultIndex = result.indexOf(firstColumn);
+        result.splice(firstResultIndex, 0, column);
+        group.splice(0, 0, column);
+      }
+    });
+
+    return result;
   }, [columns, primaryKey]);
   const [values, setValues] = useState<Row>(() =>
     buildInitialValues(sortedColumns, initialValues)
