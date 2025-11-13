@@ -36,7 +36,32 @@ export default function TableRowEditor({
     if (!unique.includes(primaryKey)) {
       unique.unshift(primaryKey);
     }
-    return unique;
+
+    const detailColumnNames = ["details_path", "details_format"];
+    const toLowerCaseSet = new Set(detailColumnNames);
+    const detailColumns = unique.filter((column) =>
+      toLowerCaseSet.has(column.toLowerCase())
+    );
+
+    if (detailColumns.length === 0) {
+      return unique;
+    }
+
+    const columnsWithoutDetails = unique.filter(
+      (column) => !toLowerCaseSet.has(column.toLowerCase())
+    );
+
+    const lastSpanishIndex = columnsWithoutDetails.reduce((acc, column, index) => {
+      return column.toLowerCase().endsWith("_es") ? index : acc;
+    }, -1);
+
+    if (lastSpanishIndex === -1) {
+      return [...columnsWithoutDetails, ...detailColumns];
+    }
+
+    const reordered = [...columnsWithoutDetails];
+    reordered.splice(lastSpanishIndex + 1, 0, ...detailColumns);
+    return reordered;
   }, [columns, primaryKey]);
   const [values, setValues] = useState<Row>(() =>
     buildInitialValues(sortedColumns, initialValues)
