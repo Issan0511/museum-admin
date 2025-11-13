@@ -37,31 +37,67 @@ export default function TableRowEditor({
       unique.unshift(primaryKey);
     }
 
-    const detailColumnNames = ["details_path", "details_format"];
-    const toLowerCaseSet = new Set(detailColumnNames);
-    const detailColumns = unique.filter((column) =>
-      toLowerCaseSet.has(column.toLowerCase())
+    const languageOrder = ["ja", "en", "zh", "ko", "fr", "es"] as const;
+    const languagePattern = new RegExp(
+      `^(.+)_(${languageOrder.join("|")})$`,
+      "i"
     );
 
-    if (detailColumns.length === 0) {
-      return unique;
-    }
+    const result: string[] = [];
+    const languageGroups = new Map<string, string[]>();
 
-    const columnsWithoutDetails = unique.filter(
-      (column) => !toLowerCaseSet.has(column.toLowerCase())
-    );
+    unique.forEach((column) => {
+      const match = column.match(languagePattern);
+      if (!match) {
+        result.push(column);
+        return;
+      }
 
-    const lastSpanishIndex = columnsWithoutDetails.reduce((acc, column, index) => {
-      return column.toLowerCase().endsWith("_es") ? index : acc;
-    }, -1);
+      const [, base, langSuffix] = match;
+      const normalizedBase = base.toLowerCase();
+      const normalizedLang = langSuffix.toLowerCase();
 
-    if (lastSpanishIndex === -1) {
-      return [...columnsWithoutDetails, ...detailColumns];
-    }
+      if (!languageGroups.has(normalizedBase)) {
+        result.push(column);
+        languageGroups.set(normalizedBase, [column]);
+        return;
+      }
 
-    const reordered = [...columnsWithoutDetails];
-    reordered.splice(lastSpanishIndex + 1, 0, ...detailColumns);
-    return reordered;
+      const group = languageGroups.get(normalizedBase)!;
+
+      const findColumnInGroup = (targetBase: string, targetLang: string) =>
+        group.findIndex(
+          (existingColumn) =>
+            existingColumn.toLowerCase() === `${targetBase}_${targetLang}`
+        );
+
+      let inserted = false;
+      const languageIndex = languageOrder.indexOf(
+        normalizedLang as (typeof languageOrder)[number]
+      );
+
+      for (let i = languageIndex - 1; i >= 0; i -= 1) {
+        const candidateLang = languageOrder[i];
+        const candidateIndex = findColumnInGroup(normalizedBase, candidateLang);
+        if (candidateIndex !== -1) {
+          const candidateColumn = group[candidateIndex];
+          const candidateResultIndex = result.indexOf(candidateColumn);
+          result.splice(candidateResultIndex + 1, 0, column);
+          group.splice(candidateIndex + 1, 0, column);
+          inserted = true;
+          break;
+        }
+      }
+
+      if (!inserted) {
+        const firstColumn = group[0];
+        const firstResultIndex = result.indexOf(firstColumn);
+        result.splice(firstResultIndex, 0, column);
+        group.splice(0, 0, column);
+      }
+    });
+
+    return result;
   }, [columns, primaryKey]);
   const [values, setValues] = useState<Row>(() =>
     buildInitialValues(sortedColumns, initialValues)
