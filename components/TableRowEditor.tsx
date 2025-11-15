@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getImageUrl, hasImageSupport } from "@/lib/imageUtils";
 
@@ -13,6 +13,25 @@ type TableRowEditorProps = {
   initialValues: Row;
   mode: "create" | "edit";
   primaryValue?: string | number | null;
+};
+
+const LANGUAGE_ORDER = ["ja", "en", "zh", "ko", "fr", "es"] as const;
+type SupportedLanguage = (typeof LANGUAGE_ORDER)[number];
+const LANGUAGE_PATTERN = new RegExp(
+  `^(.+)_(${LANGUAGE_ORDER.join("|")})$`,
+  "i"
+);
+
+const parseLanguageColumn = (column: string) => {
+  const match = column.match(LANGUAGE_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    base: match[1].toLowerCase(),
+    lang: match[2].toLowerCase() as SupportedLanguage,
+  };
 };
 
 function buildInitialValues(columns: string[], initialValues: Row) {
@@ -37,11 +56,7 @@ export default function TableRowEditor({
       unique.unshift(primaryKey);
     }
 
-    const languageOrder = ["ja", "en", "zh", "ko", "fr", "es"] as const;
-    const languagePattern = new RegExp(
-      `^(.+)_(${languageOrder.join("|")})$`,
-      "i"
-    );
+    const languagePattern = LANGUAGE_PATTERN;
 
     const result: string[] = [];
     const languageGroups = new Map<string, string[]>();
@@ -72,12 +87,10 @@ export default function TableRowEditor({
         );
 
       let inserted = false;
-      const languageIndex = languageOrder.indexOf(
-        normalizedLang as (typeof languageOrder)[number]
-      );
+      const languageIndex = LANGUAGE_ORDER.indexOf(normalizedLang as SupportedLanguage);
 
       for (let i = languageIndex - 1; i >= 0; i -= 1) {
-        const candidateLang = languageOrder[i];
+        const candidateLang = LANGUAGE_ORDER[i];
         const candidateIndex = findColumnInGroup(normalizedBase, candidateLang);
         if (candidateIndex !== -1) {
           const candidateColumn = group[candidateIndex];
@@ -114,12 +127,18 @@ export default function TableRowEditor({
   );
   const [isDuplicateId, setIsDuplicateId] = useState<boolean>(false);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState<boolean>(false);
+  const [activeTranslationCount, setActiveTranslationCount] = useState(0);
+  const [autoTranslationError, setAutoTranslationError] = useState<string | null>(null);
+  const translationTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout> | undefined>>({});
+  const translationControllersRef = useRef<Record<string, AbortController | null>>({});
 
   // マークダウンファイル関連のstate
   const [selectedMarkdownFile, setSelectedMarkdownFile] = useState<File | null>(null);
   const [isUploadingMarkdown, setIsUploadingMarkdown] = useState(false);
   const [markdownExists, setMarkdownExists] = useState<boolean | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string | null>(null);
+
+  const isAutoTranslating = activeTranslationCount > 0;
 
   const hasImage = hasImageSupport(tableName);
   const hasMarkdown = tableName === 'crafts'; // craftsテーブルのみマークダウンをサポート
@@ -153,12 +172,147 @@ export default function TableRowEditor({
     });
   }, [tableName, primaryValue, currentPrimaryValue, effectivePrimaryValue, hasImage, imageUrl]);
 
+  const translateAndFill = useCallback(
+    (baseKey: string, text: string, targetColumns: string[]) => {
+      const trimmed = text.trim();
+
+      if (!trimmed) {
+        return;
+      }
+
+      const normalizedTargets = targetColumns
+        .map((column) => parseLanguageColumn(column)?.lang)
+        .filter(
+          (lang): lang is SupportedLanguage =>
+            Boolean(lang) && lang !== "ja"
+        );
+
+      if (normalizedTargets.length === 0) {
+        return;
+      }
+
+      const controller = new AbortController();
+      translationControllersRef.current[baseKey] = controller;
+      setAutoTranslationError(null);
+      setActiveTranslationCount((prev) => prev + 1);
+
+      const executeTranslation = async () => {
+        try {
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sourceLanguage: "ja",
+              targetLanguages: normalizedTargets,
+              text: trimmed,
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            const errorPayload = await response.json().catch(() => ({}));
+            throw new Error(errorPayload.error ?? response.statusText);
+          }
+
+          const result = await response.json();
+          const translations: Record<string, string> = result.translations ?? {};
+
+          setValues((prev) => {
+            const next = { ...prev } as Row;
+
+            targetColumns.forEach((column) => {
+              const meta = parseLanguageColumn(column);
+              if (!meta || meta.lang === "ja") {
+                return;
+              }
+
+              const translatedText = translations[meta.lang];
+              if (!translatedText) {
+                return;
+              }
+
+              const currentValue = prev[column];
+              if (
+                typeof currentValue === "string" &&
+                currentValue.trim().length > 0
+              ) {
+                return;
+              }
+
+              next[column] = translatedText;
+            });
+
+            return next;
+          });
+        } catch (translationError) {
+          const isAbortError =
+            (translationError instanceof DOMException ||
+              translationError instanceof Error) &&
+            translationError.name === "AbortError";
+
+          if (isAbortError) {
+            return;
+          }
+
+          console.error("自動翻訳エラー:", translationError);
+          setAutoTranslationError(
+            translationError instanceof Error
+              ? translationError.message
+              : "自動翻訳に失敗しました。"
+          );
+        } finally {
+          setActiveTranslationCount((prev) => Math.max(0, prev - 1));
+          if (translationControllersRef.current[baseKey] === controller) {
+            translationControllersRef.current[baseKey] = null;
+          }
+        }
+      };
+
+      void executeTranslation();
+    },
+    [setValues]
+  );
+
+  const scheduleTranslation = useCallback(
+    (baseKey: string, text: string, targetColumns: string[]) => {
+      setAutoTranslationError(null);
+
+      const timeoutId = translationTimeoutsRef.current[baseKey];
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      const controller = translationControllersRef.current[baseKey];
+      if (controller) {
+        controller.abort();
+        translationControllersRef.current[baseKey] = null;
+      }
+
+      if (targetColumns.length === 0) {
+        return;
+      }
+
+      if (!text.trim()) {
+        translationTimeoutsRef.current[baseKey] = undefined;
+        return;
+      }
+
+      translationTimeoutsRef.current[baseKey] = setTimeout(() => {
+        translationTimeoutsRef.current[baseKey] = undefined;
+        translateAndFill(baseKey, text, targetColumns);
+      }, 600);
+    },
+    [setAutoTranslationError, translateAndFill]
+  );
+
   const handleChange = (column: string, value: string) => {
     setValues((prev) => ({
       ...prev,
       [column]: value,
     }));
-    
+
     // 主キーフィールドが変更された場合、画像の存在チェックと重複チェックをリセット
     if (column === primaryKey) {
       if (hasImage) {
@@ -168,11 +322,41 @@ export default function TableRowEditor({
         setIsDuplicateId(false);
       }
     }
+
+    const languageMeta = parseLanguageColumn(column);
+    if (languageMeta?.lang === "ja") {
+      const targetColumns = sortedColumns.filter((candidate) => {
+        const candidateMeta = parseLanguageColumn(candidate);
+        return (
+          !!candidateMeta &&
+          candidateMeta.base === languageMeta.base &&
+          candidateMeta.lang !== "ja"
+        );
+      });
+
+      if (targetColumns.length > 0) {
+        scheduleTranslation(languageMeta.base, value, targetColumns);
+      }
+    }
   };
 
   useEffect(() => {
     setValues(buildInitialValues(sortedColumns, initialValues));
   }, [initialValues, sortedColumns]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(translationTimeoutsRef.current).forEach((timeoutId) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      });
+
+      Object.values(translationControllersRef.current).forEach((controller) => {
+        controller?.abort();
+      });
+    };
+  }, []);
 
   // 主キーの重複チェック（新規作成モードのみ）
   useEffect(() => {
@@ -774,6 +958,18 @@ export default function TableRowEditor({
 
       <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-4">
+          {isAutoTranslating && (
+            <p className="rounded border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+              GPT-5 Miniで自動翻訳しています...
+            </p>
+          )}
+
+          {autoTranslationError && (
+            <p className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              自動翻訳に失敗しました: {autoTranslationError}
+            </p>
+          )}
+
           {sortedColumns.map((column) => {
             const inputId = `${column}-input`;
             const isPrimaryKeyField = column === primaryKey;
