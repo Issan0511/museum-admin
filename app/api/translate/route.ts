@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await parseBody(request);
   } catch (error) {
+    console.error("[Translate API] Invalid JSON body:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "無効なリクエストです。" },
       { status: 400 }
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
   const { text, sourceLanguage, targetLanguages } = body;
 
   if (typeof text !== "string" || text.trim().length === 0) {
+    console.error("[Translate API] Invalid text:", { text, type: typeof text });
     return NextResponse.json(
       { error: "翻訳するテキストを入力してください。" },
       { status: 400 }
@@ -53,6 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (typeof sourceLanguage !== "string" || sourceLanguage.trim().length === 0) {
+    console.error("[Translate API] Invalid sourceLanguage:", { sourceLanguage, type: typeof sourceLanguage });
     return NextResponse.json(
       { error: "元の言語が指定されていません。" },
       { status: 400 }
@@ -60,6 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!Array.isArray(targetLanguages) || targetLanguages.length === 0) {
+    console.error("[Translate API] Invalid targetLanguages:", { targetLanguages, isArray: Array.isArray(targetLanguages) });
     return NextResponse.json(
       { error: "翻訳対象の言語が指定されていません。" },
       { status: 400 }
@@ -79,6 +83,11 @@ export async function POST(request: NextRequest) {
   );
 
   if (normalizedTargets.length === 0) {
+    console.error("[Translate API] No valid target languages after normalization:", { 
+      originalTargetLanguages: targetLanguages, 
+      normalizedTargets, 
+      normalizedSource 
+    });
     return NextResponse.json(
       { error: "翻訳対象の言語が指定されていません。" },
       { status: 400 }
@@ -110,13 +119,17 @@ export async function POST(request: NextRequest) {
             content: `${prompt}\n\nText:\n"""${trimmedText}"""`,
           },
         ],
-        temperature: 0.2,
         response_format: { type: "json_object" },
       }),
     });
 
     if (!response.ok) {
       const errorPayload = await response.json().catch(() => ({}));
+      console.error("[Translate API] OpenAI API error:", { 
+        status: response.status, 
+        statusText: response.statusText, 
+        errorPayload 
+      });
       const message =
         typeof errorPayload?.error === "string"
           ? errorPayload.error
