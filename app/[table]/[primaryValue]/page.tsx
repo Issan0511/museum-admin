@@ -6,6 +6,9 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getTableMetadata } from "@/lib/tables";
 import { inferPrimaryKey, mergeColumns } from "@/lib/tableUtils";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type Row = Record<string, any>;
 
 async function fetchRow(
