@@ -41,6 +41,24 @@ function buildInitialValues(columns: string[], initialValues: Row) {
   }, {});
 }
 
+const HIDDEN_CRAFT_COLUMNS = [
+  "slug",
+  "details_path",
+  "details_format",
+];
+
+const shouldHideCraftColumn = (column: string) => {
+  if (HIDDEN_CRAFT_COLUMNS.includes(column)) {
+    return true;
+  }
+
+  if (column.toLowerCase().startsWith("summary_")) {
+    return true;
+  }
+
+  return false;
+};
+
 export default function TableRowEditor({
   tableName,
   columns,
@@ -50,8 +68,16 @@ export default function TableRowEditor({
   primaryValue,
 }: TableRowEditorProps) {
   const router = useRouter();
+  const filteredColumns = useMemo(() => {
+    if (tableName !== "crafts") {
+      return columns;
+    }
+
+    return columns.filter((column) => !shouldHideCraftColumn(column));
+  }, [columns, tableName]);
+
   const sortedColumns = useMemo(() => {
-    const unique = Array.from(new Set(columns));
+    const unique = Array.from(new Set(filteredColumns));
     if (!unique.includes(primaryKey)) {
       unique.unshift(primaryKey);
     }
@@ -111,7 +137,7 @@ export default function TableRowEditor({
     });
 
     return result;
-  }, [columns, primaryKey]);
+  }, [filteredColumns, primaryKey]);
   const [values, setValues] = useState<Row>(() =>
     buildInitialValues(sortedColumns, initialValues)
   );
