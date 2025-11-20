@@ -16,6 +16,7 @@ const TABLES: TableMetadata[] = [
     displayName: "工芸品",
     columns: [
       "id",
+      "display_order",
       "slug",
       "name_ja",
       "name_en",
