@@ -158,15 +158,6 @@ export default function CalendarTableEditor({
 }: CalendarTableEditorProps) {
   const [rows, setRows] = useState<CalendarRow[]>(initialRows);
   const [currentMonth, setCurrentMonth] = useState(() => {
-    if (rows.length > 0) {
-      const firstDateKey = toDateKey(rows[0]?.demo_date);
-      if (firstDateKey) {
-        const parts = parseDateParts(firstDateKey);
-        if (parts) {
-          return new Date(parts.year, parts.month - 1, 1);
-        }
-      }
-    }
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
