@@ -10,6 +10,14 @@ export default function DataPage() {
 
   return (
     <div className="space-y-6">
+      <div className="mb-4">
+        <Link
+          href="/"
+          className="inline-block rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-300"
+        >
+          ← ホーム
+        </Link>
+      </div>
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">データ管理</h1>
         <p className="text-slate-600">
