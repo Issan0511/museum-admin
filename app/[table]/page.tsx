@@ -13,7 +13,7 @@ export const revalidate = 0;
 
 async function fetchRows(tableName: string) {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase.from(tableName).select("*");
+  const { data, error } = await supabase.from(tableName).select("*").order("id", { ascending: true });
 
   if (error) {
     throw new Error(error.message);
