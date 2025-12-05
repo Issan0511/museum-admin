@@ -11,9 +11,16 @@ import { getImageUrl, hasImageSupport } from "@/lib/imageUtils";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function fetchRows(tableName: string) {
+async function fetchRows(tableName: string, columns: string[]) {
   const supabase = createServiceRoleClient();
-  const { data, error } = await supabase.from(tableName).select("*").order("id", { ascending: true });
+  
+  // ソートカラムを決定（id があれば id、なければ最初のカラム）
+  const sortColumn = columns.includes("id") ? "id" : columns[0];
+  
+  const { data, error } = await supabase
+    .from(tableName)
+    .select("*")
+    .order(sortColumn, { ascending: true });
 
   if (error) {
     throw new Error(error.message);
@@ -53,7 +60,7 @@ export default async function TablePage({
   let templates: Awaited<ReturnType<typeof fetchDemoTemplates>> = [];
 
   try {
-    rows = await fetchRows(metadata.tableName);
+    rows = await fetchRows(metadata.tableName, metadata.columns);
   } catch (error) {
     fetchError = error instanceof Error ? error.message : "データの取得に失敗しました";
   }
