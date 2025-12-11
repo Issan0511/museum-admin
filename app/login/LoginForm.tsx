@@ -53,11 +53,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-slate-500">
-          <Link href="/" className="text-indigo-600 hover:underline">
-            トップに戻る
-          </Link>
-        </div>
+
       </div>
     </div>
   );

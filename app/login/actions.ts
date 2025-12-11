@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-const ADMIN_PASSWORD = "densan2026";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const AUTH_COOKIE_NAME = "admin_auth";
 
 export type LoginState = {
