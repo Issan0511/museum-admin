@@ -10,7 +10,11 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
-  const [state, formAction] = useFormState<LoginState>(loginAction, {});
+  const initialState: LoginState = {};
+  const [state, formAction] = useFormState<LoginState, FormData>(
+    loginAction,
+    initialState
+  );
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
