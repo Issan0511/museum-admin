@@ -1001,6 +1001,12 @@ export default function TableRowEditor({
             const isPrimaryKeyField = column === primaryKey;
             const showDuplicateWarning = isPrimaryKeyField && mode === "create" && isDuplicateId;
             const showCheckingStatus = isPrimaryKeyField && mode === "create" && isCheckingDuplicate;
+
+            const shouldHideIdField = tableName !== "calendar" && primaryKey === "id";
+
+            if (shouldHideIdField && isPrimaryKeyField) {
+              return null;
+            }
             
             // 日付フィールドかどうかを判定
             const isDateField = column.toLowerCase().includes('date');

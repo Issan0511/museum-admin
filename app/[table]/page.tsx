@@ -46,9 +46,10 @@ async function fetchDemoTemplates() {
 export default async function TablePage({
   params,
 }: {
-  params: { table: string };
+  params: Promise<{ table: string }>;
 }) {
-  const metadata = getTableMetadata(params.table);
+  const { table } = await params;
+  const metadata = getTableMetadata(table);
 
   if (!metadata) {
     notFound();

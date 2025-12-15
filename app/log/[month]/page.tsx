@@ -228,12 +228,13 @@ export default function MonthlyNarrativeDashboard({
 }: {
   params: { month: string };
 }) {
-  const data = useMemo(() => monthlyDashboardData[params.month], [params.month]);
+  const { month } = params;
+  const data = useMemo(() => monthlyDashboardData[month], [month]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     setMenuOpen(false);
-  }, [params.month]);
+  }, [month]);
 
   if (!data) {
     return (
@@ -280,7 +281,7 @@ export default function MonthlyNarrativeDashboard({
               </div>
             </button>
             {menuOpen ? (
-              <MonthMenu currentMonth={params.month} onClose={() => setMenuOpen(false)} />
+              <MonthMenu currentMonth={month} onClose={() => setMenuOpen(false)} />
             ) : null}
           </div>
         </div>

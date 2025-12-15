@@ -9,11 +9,12 @@ const MARKDOWN_BUCKET = 'craft_texts';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
+    const { table } = await params;
     // craftsテーブルのみサポート
-    if (params.table !== 'crafts') {
+    if (table !== 'crafts') {
       return Response.json({ error: "このテーブルはマークダウンファイルをサポートしていません" }, { status: 400 });
     }
 
@@ -70,11 +71,12 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
+    const { table } = await params;
     // craftsテーブルのみサポート
-    if (params.table !== 'crafts') {
+    if (table !== 'crafts') {
       return Response.json({ error: "このテーブルはマークダウンファイルをサポートしていません" }, { status: 400 });
     }
 
@@ -108,11 +110,12 @@ export async function DELETE(
 // マークダウンファイルの内容を取得
 export async function GET(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
+    const { table } = await params;
     // craftsテーブルのみサポート
-    if (params.table !== 'crafts') {
+    if (table !== 'crafts') {
       return Response.json({ error: "このテーブルはマークダウンファイルをサポートしていません" }, { status: 400 });
     }
 

@@ -24,10 +24,11 @@ function validatePrimaryKey(primaryKey: string | undefined) {
 // IDの存在チェック用のGETエンドポイント
 export async function GET(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    validateTableName(params.table);
+    const { table } = await params;
+    validateTableName(table);
     
     const { searchParams } = new URL(request.url);
     const primaryKey = searchParams.get('primaryKey');
@@ -40,7 +41,7 @@ export async function GET(
     validatePrimaryKey(primaryKey);
     
     const client = getClient();
-    const tableQuery = client.from(params.table as string) as any;
+    const tableQuery = client.from(table as string) as any;
     const { data, error } = await tableQuery
       .select('*')
       .eq(primaryKey, primaryValue)
@@ -60,13 +61,14 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    validateTableName(params.table);
+    const { table } = await params;
+    validateTableName(table);
     const payload = await request.json();
     const client = getClient();
-    const tableQuery = client.from(params.table as string) as any;
+    const tableQuery = client.from(table as string) as any;
     const { data, error } = await tableQuery
       .insert(payload.values ?? payload)
       .select()
@@ -86,10 +88,11 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    validateTableName(params.table);
+    const { table } = await params;
+    validateTableName(table);
     const payload = await request.json();
     const { primaryKey, primaryValue, values } = payload ?? {};
     validatePrimaryKey(primaryKey);
@@ -98,12 +101,12 @@ export async function PUT(
       throw new Error(`${primaryKey} が必要です`);
     }
 
-    console.log('[PUT] Table:', params.table);
+    console.log('[PUT] Table:', table);
     console.log('[PUT] PrimaryKey:', primaryKey, '=', primaryValue);
     console.log('[PUT] Values:', values);
 
     const client = getClient();
-    const tableQuery = client.from(params.table as string) as any;
+    const tableQuery = client.from(table as string) as any;
     const { data, error } = await tableQuery
       .update(values as Record<string, unknown>)
       .eq(primaryKey, primaryValue)
@@ -127,10 +130,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    validateTableName(params.table);
+    const { table } = await params;
+    validateTableName(table);
     const payload = await request.json();
     const { primaryKey, primaryValue } = payload ?? {};
     validatePrimaryKey(primaryKey);
@@ -140,7 +144,7 @@ export async function DELETE(
     }
 
     const client = getClient();
-    const tableQuery = client.from(params.table as string) as any;
+    const tableQuery = client.from(table as string) as any;
     const { error } = await tableQuery
       .delete()
       .eq(primaryKey, primaryValue);

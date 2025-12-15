@@ -7,9 +7,10 @@ export const revalidate = 0;
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
+    const { table } = await params;
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const primaryValue = formData.get('primaryValue') as string | null;
@@ -22,7 +23,7 @@ export async function POST(
       return Response.json({ error: "主キーの値が必要です" }, { status: 400 });
     }
 
-    const bucketName = getBucketName(params.table);
+    const bucketName = getBucketName(table);
     if (!bucketName) {
       return Response.json({ error: "このテーブルは画像をサポートしていません" }, { status: 400 });
     }
@@ -63,16 +64,17 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
+    const { table } = await params;
     const { primaryValue } = await request.json();
 
     if (!primaryValue) {
       return Response.json({ error: "主キーの値が必要です" }, { status: 400 });
     }
 
-    const bucketName = getBucketName(params.table);
+    const bucketName = getBucketName(table);
     if (!bucketName) {
       return Response.json({ error: "このテーブルは画像をサポートしていません" }, { status: 400 });
     }

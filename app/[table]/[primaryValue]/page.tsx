@@ -33,9 +33,10 @@ async function fetchRow(
 export default async function TableRowPage({
   params,
 }: {
-  params: { table: string; primaryValue: string };
+  params: Promise<{ table: string; primaryValue: string }>;
 }) {
-  const metadata = getTableMetadata(params.table);
+  const { table, primaryValue } = await params;
+  const metadata = getTableMetadata(table);
 
   if (!metadata) {
     notFound();
@@ -60,7 +61,7 @@ export default async function TableRowPage({
   let fetchError: string | null = null;
 
   try {
-    row = await fetchRow(tableName, primaryKey, params.primaryValue);
+    row = await fetchRow(tableName, primaryKey, primaryValue);
   } catch (error) {
     fetchError =
       error instanceof Error ? error.message : "レコードの取得に失敗しました";
@@ -72,7 +73,7 @@ export default async function TableRowPage({
 
   const primaryValueLabel = row
     ? String(row[primaryKey] ?? "")
-    : decodeURIComponent(params.primaryValue);
+    : decodeURIComponent(primaryValue);
 
   return (
     <div className="space-y-6">
