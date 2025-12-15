@@ -21,7 +21,8 @@ export async function loginAction(
     return { error: "パスワードが違います。" };
   }
 
-  cookies().set({
+  const cookieStore = await cookies();
+  cookieStore.set({
     name: AUTH_COOKIE_NAME,
     value: "granted",
     httpOnly: true,

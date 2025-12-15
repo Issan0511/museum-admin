@@ -49,7 +49,7 @@ export default async function NewTableRowPage({
       nextId = String(rawMaxId + 1);
     } else if (!maxIdError && typeof rawMaxId === "string" && /^\d+$/.test(rawMaxId)) {
       // bigint(int8)がstringで返ることがあるため BigInt で扱う
-      nextId = (BigInt(rawMaxId) + 1n).toString();
+      nextId = (BigInt(rawMaxId) + BigInt(1)).toString();
     } else {
       // 0件テーブル or 取得失敗時は1から
       nextId = "1";
