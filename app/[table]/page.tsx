@@ -14,8 +14,13 @@ export const revalidate = 0;
 async function fetchRows(tableName: string, columns: string[]) {
   const supabase = createServiceRoleClient();
   
-  // ソートカラムを決定（id があれば id、なければ最初のカラム）
-  const sortColumn = columns.includes("id") ? "id" : columns[0];
+  // ソートカラムを決定（crafts テーブルは display_order、それ以外は id があれば id、なければ最初のカラム）
+  const sortColumn =
+    (tableName === "crafts" && columns.includes("display_order"))
+      ? "display_order"
+      : columns.includes("id")
+        ? "id"
+        : columns[0];
   
   const { data, error } = await supabase
     .from(tableName)
