@@ -10,7 +10,6 @@ import {
 export type KpiCard = {
   label: string;
   value: number;
-  diff: number;
 };
 
 export type SimpleRatioItem = {
@@ -259,13 +258,6 @@ function toCraftRanking(record: Record<string, number>): SimpleRatioItem[] {
     }));
 }
 
-function calcDiff(current: number, previous: number | null): number {
-  if (!previous || previous <= 0) {
-    return 0;
-  }
-  return Math.round(((current - previous) / previous) * 100);
-}
-
 function sumRecordValues(record: Record<string, number>): number {
   return Object.values(record).reduce((sum, value) => sum + value, 0);
 }
@@ -283,11 +275,7 @@ const summariesByMonth = adminChatSummaries.reduce<
   return acc;
 }, {});
 
-function buildMonthData(
-  month: string,
-  index: number,
-  sortedMonths: string[]
-): MonthlyDashboardData | null {
+function buildMonthData(month: string): MonthlyDashboardData | null {
   const kpi = kpiByMonth.get(month);
   if (!kpi) {
     return null;
@@ -295,11 +283,6 @@ function buildMonthData(
 
   const chatAggregate = aggregateByMonth.get(month) ?? null;
   const chatSummaries = summariesByMonth[month] ?? [];
-  const previousMonth = sortedMonths[index - 1];
-  const previousKpi = previousMonth ? kpiByMonth.get(previousMonth) ?? null : null;
-  const previousAggregate = previousMonth
-    ? aggregateByMonth.get(previousMonth) ?? null
-    : null;
 
   const totalShopClicks =
     kpi.totalShopClicks ?? sumRecordValues(kpi.craftShopClicks);
@@ -357,23 +340,14 @@ function buildMonthData(
       {
         label: "来館者数",
         value: kpi.visits,
-        diff: calcDiff(kpi.visits, previousKpi?.visits ?? null),
       },
       {
         label: "ショップクリック数",
         value: totalShopClicks,
-        diff: calcDiff(
-          totalShopClicks,
-          previousKpi
-            ? previousKpi.totalShopClicks ??
-                sumRecordValues(previousKpi.craftShopClicks)
-            : null
-        ),
       },
       {
         label: "AIチャット総質問数",
         value: totalQuestions,
-        diff: calcDiff(totalQuestions, previousAggregate?.volumeTotal ?? null),
       },
     ],
     rankingData: toCraftRanking(kpi.craftAccesses),
@@ -400,7 +374,7 @@ const allMonths = Array.from(
 ).sort();
 
 export const monthlyDashboardData: Record<string, MonthlyDashboardData> = allMonths
-  .map((month, index) => [month, buildMonthData(month, index, allMonths)] as const)
+  .map((month) => [month, buildMonthData(month)] as const)
   .reduce<Record<string, MonthlyDashboardData>>((acc, [month, data]) => {
     if (data) {
       acc[month] = data;

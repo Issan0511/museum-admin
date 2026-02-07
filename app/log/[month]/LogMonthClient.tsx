@@ -351,14 +351,6 @@ export default function LogMonthClient({ month }: LogMonthClientProps) {
                 <div className="text-2xl font-semibold text-white/90">
                   {c.value.toLocaleString()}
                 </div>
-                <div
-                  className={`text-sm ${
-                    c.diff >= 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {c.diff >= 0 ? "+" : ""}
-                  {c.diff}%
-                </div>
               </div>
             ))}
           </div>

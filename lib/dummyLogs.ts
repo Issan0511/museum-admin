@@ -139,7 +139,7 @@ const rawAdminKpiMonthly: RawKpiRow[] = [
     total_shop_clicks: 33,
   },
   {
-    yyyymm: "2025-11",
+    yyyymm: "2026-01",
     visits: "245",
     lang_dist: '{"en": 35, "es": 15, "fr": 2, "ja": 185, "zh": 8}',
     age_dist: '{"10s": 6, "20s": 84, "30s": 40, "40s": 11, "50s": 28, "60s": 15, "70s": 4, "80s_plus": 4, "under_10": 53}',
@@ -170,7 +170,7 @@ const rawAdminChatAggregatesMonthly: RawChatAggregateRow[] = [
     updated_at: "2025-11-12 02:56:42.939094+00:00",
   },
   {
-    yyyymm: "2025-11",
+    yyyymm: "2026-01",
     volume_total: "93",
     volume_by_craft: '{"1": 7, "9": 1, "13": 23, "15": 1, "16": 1, "17": 10, "19": 2, "23": 1, "34": 2, "35": 2, "40": 5, "42": 4, "49": 5, "56": 2, "61": 1, "63": 4, "69": 16, "71": 2, "73": 4}',
     lang_ui_dist: '{"es": 11, "ja": 82}',
