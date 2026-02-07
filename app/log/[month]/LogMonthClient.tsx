@@ -6,7 +6,6 @@ import {
   Bar,
   BarChart,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -22,30 +21,49 @@ import {
 } from "../data";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#00c49f"];
+const PIE_START_ANGLE = 90;
+const PIE_END_ANGLE = -270;
 
-function OverallStats({ cards }: { cards: MonthlyDashboardData["kpiCards"] }) {
+function renderPieLabel({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+  name,
+}: {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+  name: string;
+}) {
+  if (percent < 0.06) {
+    return null;
+  }
+
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+  const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180);
+  const y = cy + radius * Math.sin((-midAngle * Math.PI) / 180);
+
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {cards.map((c) => (
-        <div
-          key={c.label}
-          className="rounded-xl border border-white/10 bg-white/5 p-4 text-center"
-        >
-          <div className="mb-1 text-sm text-white/60">{c.label}</div>
-          <div className="text-2xl font-semibold text-white/90">
-            {c.value.toLocaleString()}
-          </div>
-          <div
-            className={`text-sm ${c.diff >= 0 ? "text-green-400" : "text-red-400"}`}
-          >
-            {c.diff >= 0 ? "+" : ""}
-            {c.diff}%
-          </div>
-        </div>
-      ))}
-    </div>
+    <text
+      x={x}
+      y={y}
+      fill="#ffffff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight={600}
+    >
+      {name}
+    </text>
   );
 }
+
 
 function HighlightPanel({ highlights }: { highlights: string[] }) {
   return (
@@ -79,14 +97,18 @@ function PieGraph({
               nameKey="label"
               cx="50%"
               cy="50%"
+              innerRadius={30}
               outerRadius={80}
+              startAngle={PIE_START_ANGLE}
+              endAngle={PIE_END_ANGLE}
+              label={renderPieLabel}
+              labelLine={false}
             >
               {data.map((entry, index) => (
                 <Cell key={entry.label} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip />
-            <Legend />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -97,7 +119,7 @@ function PieGraph({
 function RankingGraph({ data }: { data: MonthlyDashboardData["rankingData"] }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <h3 className="mb-3 text-base font-semibold">人気展示ランキング（ベスト10）</h3>
+      <h3 className="mb-3 text-base font-semibold">展示アクセス数ランキング（ベスト10）</h3>
       <div className="h-80">
         <ResponsiveContainer>
           <BarChart data={data} layout="vertical" margin={{ left: 40 }}>
@@ -176,18 +198,19 @@ function CraftChatSummaryList({
 }: {
   items: MonthlyDashboardData["craftChatSummaries"];
 }) {
+  const sortedItems = [...items].sort((a, b) => b.volume - a.volume);
+
   return (
     <div className="space-y-3">
-      {items.map((it) => (
+      {sortedItems.map((it) => (
         <div
           key={it.craft}
           className="rounded-xl border border-white/10 bg-white/5 p-4"
         >
-          <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-base font-semibold">{it.craft}</h4>
-            <span className="text-sm text-white/60">
-              質問数：{it.volume.toLocaleString()}
-            </span>
+          <div className="mb-2">
+            <h4 className="text-base font-semibold">
+              {it.craft}（{it.volume.toLocaleString()}件）
+            </h4>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -318,7 +341,27 @@ export default function LogMonthClient({ month }: LogMonthClientProps) {
         <HighlightPanel highlights={data.highlights} />
 
         <Panel title="全体KPIサマリ">
-          <OverallStats cards={data.kpiCards} />
+          <div className="grid gap-4 md:grid-cols-3">
+            {data.kpiCards.map((c) => (
+              <div
+                key={c.label}
+                className="rounded-xl border border-white/10 bg-white/5 p-4 text-center"
+              >
+                <div className="mb-1 text-sm text-white/60">{c.label}</div>
+                <div className="text-2xl font-semibold text-white/90">
+                  {c.value.toLocaleString()}
+                </div>
+                <div
+                  className={`text-sm ${
+                    c.diff >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {c.diff >= 0 ? "+" : ""}
+                  {c.diff}%
+                </div>
+              </div>
+            ))}
+          </div>
         </Panel>
 
         <RankingGraph data={data.rankingData} />

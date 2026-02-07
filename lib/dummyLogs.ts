@@ -3,10 +3,12 @@ export type LanguageDistribution = Record<string, number>;
 export type AdminKpiMonthlyRow = {
   yyyymm: string;
   visits: number;
-  shopClicks: number;
   langDist: LanguageDistribution;
   ageDist: Record<string, number>;
   createdAt: string;
+  craftAccesses: Record<string, number>;
+  craftShopClicks: Record<string, number>;
+  totalShopClicks: number | null;
 };
 
 export type KeywordCount = {
@@ -24,14 +26,12 @@ export type SampleQuestion = {
 };
 
 export type AdminChatAggregatesMonthlyRow = {
-  craftId: number;
   yyyymm: string;
-  volume: number;
+  volumeTotal: number;
+  volumeByCraft: Record<string, number>;
   langUiDist: LanguageDistribution;
-  langDetectedDist: LanguageDistribution;
-  topKeywords: KeywordCount[];
-  topIntents: IntentCount[];
-  sampleQa: SampleQuestion[];
+  topIntentsOverall: IntentCount[];
+  topIntentsByCraft: Record<string, IntentCount[]>;
   updatedAt: string;
 };
 
@@ -53,21 +53,21 @@ export type AdminChatSummaryRow = {
 type RawKpiRow = {
   yyyymm: string;
   visits: string;
-  shop_clicks: string;
   lang_dist: string;
   age_dist: string;
   created_at: string;
+  craft_accesses: string;
+  craft_shop_clicks: string;
+  total_shop_clicks: number | null;
 };
 
 type RawChatAggregateRow = {
-  craft_id: string;
   yyyymm: string;
-  volume: string;
+  volume_total: string;
+  volume_by_craft: string;
   lang_ui_dist: string;
-  lang_detected_dist: string;
-  top_keywords: string;
-  top_intents: string;
-  sample_qa: string;
+  top_intents_overall: string;
+  top_intents_by_craft: string;
   updated_at: string;
 };
 
@@ -119,152 +119,64 @@ const rawAdminKpiMonthly: RawKpiRow[] = [
   {
     yyyymm: "2025-09",
     visits: "180",
-    shop_clicks: "27",
     lang_dist: '{"ja": 126, "en": 44, "zh": 10}',
     age_dist:
       '{"20s": 57, "30s": 52, "40s": 32, "10s": 22, "50s+": 17}',
     created_at: "2025-11-12 02:56:42.896406+00:00",
+    craft_accesses: "{}",
+    craft_shop_clicks: "{}",
+    total_shop_clicks: 27,
   },
   {
     yyyymm: "2025-10",
     visits: "220",
-    shop_clicks: "33",
     lang_dist: '{"ja": 145, "en": 61, "zh": 14}',
     age_dist:
       '{"20s": 68, "30s": 57, "40s": 44, "10s": 27, "50s+": 24}',
     created_at: "2025-11-12 02:56:42.906004+00:00",
+    craft_accesses: "{}",
+    craft_shop_clicks: "{}",
+    total_shop_clicks: 33,
   },
   {
     yyyymm: "2025-11",
-    visits: "260",
-    shop_clicks: "39",
-    lang_dist: '{"ja": 173, "en": 70, "zh": 17}',
-    age_dist:
-      '{"20s": 86, "30s": 67, "40s": 47, "10s": 30, "50s+": 30}',
-    created_at: "2025-11-12 02:56:42.923401+00:00",
+    visits: "245",
+    lang_dist: '{"en": 35, "es": 15, "fr": 2, "ja": 185, "zh": 8}',
+    age_dist: '{"10s": 6, "20s": 84, "30s": 40, "40s": 11, "50s": 28, "60s": 15, "70s": 4, "80s_plus": 4, "under_10": 53}',
+    created_at: "2026-02-07 05:17:08.86932+00",
+    craft_accesses: '{"1": 32, "2": 1, "3": 5, "5": 2, "6": 1, "9": 4, "10": 1, "11": 2, "13": 21, "14": 2, "15": 4, "16": 3, "17": 42, "18": 2, "19": 10, "21": 3, "22": 1, "23": 6, "24": 1, "27": 2, "31": 6, "32": 1, "34": 4, "35": 4, "36": 2, "40": 2, "41": 1, "42": 8, "43": 1, "45": 2, "46": 1, "49": 1, "50": 2, "51": 1, "53": 1, "54": 1, "55": 3, "56": 2, "57": 1, "58": 1, "60": 1, "61": 1, "62": 1, "63": 15, "65": 2, "66": 2, "67": 1, "69": 11, "71": 3, "72": 4, "73": 1}',
+    craft_shop_clicks: '{"1": 3, "13": 1, "17": 1, "31": 1, "50": 1, "63": 2, "72": 1}',
+    total_shop_clicks: null,
   },
 ];
 
 const rawAdminChatAggregatesMonthly: RawChatAggregateRow[] = [
   {
-    craft_id: "1",
     yyyymm: "2025-09",
-    volume: "30",
-    lang_ui_dist: '{"ja": 22, "en": 6, "zh": 2}',
-    lang_detected_dist: '{"ja": 16, "en": 8, "zh": 6}',
-    top_keywords:
-      '[{"k": "制作体験は予約が必要ですか", "c": 13}, {"k": "どの店で正絹の小物を買えますか", "c": 5}, {"k": "the", "c": 4}, {"k": "西陣織の帯はどうやって織るの", "c": 4}, {"k": "Do", "c": 3}]',
-    top_intents:
-      '[{"i": "予約/予約可否", "c": 16}, {"i": "体験/クラス", "c": 13}, {"i": "購入/購入先", "c": 6}]',
-    sample_qa:
-      '[{"q": "How is the obi woven in Nishijin-ori?"}, {"q": "Where can I buy small silk items?"}, {"q": "どの店で正絹の小物を買えますか？"}]',
+    volume_total: "54",
+    volume_by_craft: '{"1": 30, "2": 14, "3": 10}',
+    lang_ui_dist: '{"ja": 38, "en": 10, "zh": 6}',
+    top_intents_overall: '[{"intent": "history", "count": 20}, {"intent": "process", "count": 15}, {"intent": "purchase", "count": 10}]',
+    top_intents_by_craft: '{"1": [{"intent": "history", "count": 10}], "2": [{"intent": "process", "count": 5}], "3": [{"intent": "purchase", "count": 5}]}',
     updated_at: "2025-11-12 02:56:42.932082+00:00",
   },
   {
-    craft_id: "2",
-    yyyymm: "2025-09",
-    volume: "14",
-    lang_ui_dist: '{"ja": 9, "en": 3, "zh": 2}',
-    lang_detected_dist: '{"ja": 7, "zh": 5, "en": 2}',
-    top_keywords:
-      '[{"k": "初心者向け体験は何分くらい", "c": 4}, {"k": "清水焼の窯元見学は可能", "c": 3}, {"k": "Can", "c": 2}, {"k": "visit", "c": 2}, {"k": "Kiyomizu", "c": 2}]',
-    top_intents: '[{"i": "体験/クラス", "c": 5}, {"i": "価格/費用", "c": 3}]',
-    sample_qa:
-      '[{"q": "Can I visit a Kiyomizu kiln?"}, {"q": "初心者向け体験は何分くらい？"}, {"q": "可以参观清水烧窑场吗？"}]',
-    updated_at: "2025-11-12 02:56:42.933876+00:00",
-  },
-  {
-    craft_id: "3",
-    yyyymm: "2025-09",
-    volume: "10",
-    lang_ui_dist: '{"ja": 7, "zh": 2, "en": 1}',
-    lang_detected_dist: '{"ja": 6, "zh": 3, "en": 1}',
-    top_keywords:
-      '[{"k": "子ども向けの説明はありますか", "c": 3}, {"k": "友禅の下絵は手描き", "c": 3}, {"k": "染料是天然的吗", "c": 1}, {"k": "有适合儿童的讲解吗", "c": 1}, {"k": "染料は天然ですか", "c": 1}]',
-    top_intents: "[]",
-    sample_qa:
-      '[{"q": "子ども向けの説明はありますか？"}, {"q": "子ども向けの説明はありますか？"}, {"q": "友禅の下絵は手描き？"}]',
-    updated_at: "2025-11-12 02:56:42.935479+00:00",
-  },
-  {
-    craft_id: "1",
     yyyymm: "2025-10",
-    volume: "37",
-    lang_ui_dist: '{"ja": 25, "en": 11, "zh": 1}',
-    lang_detected_dist: '{"ja": 21, "en": 12, "zh": 4}',
-    top_keywords:
-      '[{"k": "制作体験は予約が必要ですか", "c": 9}, {"k": "西陣織の帯はどうやって織るの", "c": 8}, {"k": "どの店で正絹の小物を買えますか", "c": 8}, {"k": "the", "c": 6}, {"k": "How", "c": 5}]',
-    top_intents:
-      '[{"i": "予約/予約可否", "c": 11}, {"i": "体験/クラス", "c": 10}, {"i": "購入/購入先", "c": 8}]',
-    sample_qa:
-      '[{"q": "西陣織の帯はどうやって織るの？"}, {"q": "西陣織の帯はどうやって織るの？"}, {"q": "制作体験は予約が必要ですか？"}]',
+    volume_total: "66",
+    volume_by_craft: '{"1": 37, "2": 20, "3": 9}',
+    lang_ui_dist: '{"ja": 47, "en": 16, "zh": 3}',
+    top_intents_overall: '[{"intent": "history", "count": 25}, {"intent": "process", "count": 20}, {"intent": "purchase", "count": 15}]',
+    top_intents_by_craft: '{"1": [{"intent": "history", "count": 12}], "2": [{"intent": "process", "count": 8}], "3": [{"intent": "purchase", "count": 5}]}',
     updated_at: "2025-11-12 02:56:42.939094+00:00",
   },
   {
-    craft_id: "2",
-    yyyymm: "2025-10",
-    volume: "20",
-    lang_ui_dist: '{"ja": 15, "en": 4, "zh": 1}',
-    lang_detected_dist: '{"ja": 13, "en": 5, "zh": 2}',
-    top_keywords:
-      '[{"k": "釉薬の違いで価格は変わりますか", "c": 6}, {"k": "初心者向け体験は何分くらい", "c": 5}, {"k": "清水焼の窯元見学は可能", "c": 4}, {"k": "the", "c": 3}, {"k": "How", "c": 2}]',
-    top_intents: '[{"i": "体験/クラス", "c": 8}, {"i": "価格/費用", "c": 7}]',
-    sample_qa:
-      '[{"q": "釉薬の違いで価格は変わりますか？"}, {"q": "Does glaze type change the price?"}, {"q": "釉薬の違いで価格は変わりますか？"}]',
-    updated_at: "2025-11-12 02:56:42.940628+00:00",
-  },
-  {
-    craft_id: "3",
-    yyyymm: "2025-10",
-    volume: "9",
-    lang_ui_dist: '{"ja": 7, "zh": 1, "en": 1}',
-    lang_detected_dist: '{"ja": 6, "zh": 2, "en": 1}',
-    top_keywords:
-      '[{"k": "子ども向けの説明はありますか", "c": 3}, {"k": "染料は天然ですか", "c": 2}, {"k": "友禅の下絵は手描き", "c": 2}, {"k": "染料是天然的吗", "c": 1}, {"k": "Are", "c": 1}]',
-    top_intents: "[]",
-    sample_qa:
-      '[{"q": "子ども向けの説明はありますか？"}, {"q": "子ども向けの説明はありますか？"}, {"q": "染料は天然ですか？"}]',
-    updated_at: "2025-11-12 02:56:42.942147+00:00",
-  },
-  {
-    craft_id: "1",
     yyyymm: "2025-11",
-    volume: "37",
-    lang_ui_dist: '{"ja": 23, "en": 13, "zh": 1}',
-    lang_detected_dist: '{"ja": 19, "en": 12, "zh": 6}',
-    top_keywords:
-      '[{"k": "the", "c": 9}, {"k": "どの店で正絹の小物を買えますか", "c": 8}, {"k": "制作体験は予約が必要ですか", "c": 8}, {"k": "西陣織の帯はどうやって織るの", "c": 7}, {"k": "Do", "c": 5}]',
-    top_intents:
-      '[{"i": "予約/予約可否", "c": 13}, {"i": "購入/購入先", "c": 9}, {"i": "体験/クラス", "c": 8}]',
-    sample_qa:
-      '[{"q": "どの店で正絹の小物を買えますか？"}, {"q": "西陣織の帯はどうやって織るの？"}, {"q": "Do I need a reservation for the workshop?"}]',
-    updated_at: "2025-11-12 02:56:42.945664+00:00",
-  },
-  {
-    craft_id: "2",
-    yyyymm: "2025-11",
-    volume: "21",
-    lang_ui_dist: '{"ja": 16, "en": 3, "zh": 2}',
-    lang_detected_dist: '{"ja": 12, "en": 5, "zh": 4}',
-    top_keywords:
-      '[{"k": "初心者向け体験は何分くらい", "c": 7}, {"k": "釉薬の違いで価格は変わりますか", "c": 6}, {"k": "清水焼の窯元見学は可能", "c": 3}, {"k": "Can", "c": 2}, {"k": "visit", "c": 2}]',
-    top_intents: '[{"i": "体験/クラス", "c": 9}, {"i": "価格/費用", "c": 7}]',
-    sample_qa:
-      '[{"q": "初心者向け体験は何分くらい？"}, {"q": "釉薬の違いで価格は変わりますか？"}, {"q": "初心者向け体験は何分くらい？"}]',
-    updated_at: "2025-11-12 02:56:42.947263+00:00",
-  },
-  {
-    craft_id: "3",
-    yyyymm: "2025-11",
-    volume: "20",
-    lang_ui_dist: '{"ja": 11, "en": 6, "zh": 3}',
-    lang_detected_dist: '{"ja": 11, "en": 5, "zh": 4}',
-    top_keywords:
-      '[{"k": "染料は天然ですか", "c": 5}, {"k": "友禅の下絵は手描き", "c": 5}, {"k": "Is", "c": 4}, {"k": "the", "c": 3}, {"k": "there", "c": 3}]',
-    top_intents: "[]",
-    sample_qa:
-      '[{"q": "染料は天然ですか？"}, {"q": "Are the dyes natural?"}, {"q": "染料は天然ですか？"}]',
-    updated_at: "2025-11-12 02:56:42.948752+00:00",
+    volume_total: "93",
+    volume_by_craft: '{"1": 7, "9": 1, "13": 23, "15": 1, "16": 1, "17": 10, "19": 2, "23": 1, "34": 2, "35": 2, "40": 5, "42": 4, "49": 5, "56": 2, "61": 1, "63": 4, "69": 16, "71": 2, "73": 4}',
+    lang_ui_dist: '{"es": 11, "ja": 82}',
+    top_intents_overall: '[{"count": 37, "intent": "history"}, {"count": 23, "intent": "other"}, {"count": 10, "intent": "process"}, {"count": 7, "intent": "material"}, {"count": 5, "intent": "products"}, {"count": 5, "intent": "other_craft"}, {"count": 3, "intent": "purchase"}, {"count": 2, "intent": "access_location"}, {"count": 1, "intent": "price"}]',
+    top_intents_by_craft: '{"1": [{"count": 4, "intent": "history"}, {"count": 1, "intent": "process"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other"}], "9": [{"count": 1, "intent": "history"}], "13": [{"count": 18, "intent": "history"}, {"count": 2, "intent": "process"}, {"count": 1, "intent": "price"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other_craft"}], "15": [{"count": 1, "intent": "purchase"}], "16": [{"count": 1, "intent": "purchase"}], "17": [{"count": 4, "intent": "history"}, {"count": 2, "intent": "other"}, {"count": 2, "intent": "products"}, {"count": 1, "intent": "purchase"}, {"count": 1, "intent": "other_craft"}], "19": [{"count": 1, "intent": "history"}, {"count": 1, "intent": "access_location"}], "23": [{"count": 1, "intent": "process"}], "34": [{"count": 1, "intent": "process"}, {"count": 1, "intent": "material"}], "35": [{"count": 1, "intent": "other"}, {"count": 1, "intent": "process"}], "40": [{"count": 5, "intent": "other"}], "42": [{"count": 1, "intent": "products"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "history"}], "49": [{"count": 2, "intent": "other"}, {"count": 1, "intent": "products"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "history"}], "56": [{"count": 2, "intent": "process"}], "61": [{"count": 1, "intent": "products"}], "63": [{"count": 1, "intent": "history"}, {"count": 1, "intent": "access_location"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "process"}], "69": [{"count": 12, "intent": "other"}, {"count": 2, "intent": "history"}, {"count": 1, "intent": "process"}, {"count": 1, "intent": "other_craft"}], "71": [{"count": 2, "intent": "history"}], "73": [{"count": 2, "intent": "material"}, {"count": 2, "intent": "history"}]}',
+    updated_at: "2026-02-07 06:13:14.719+00",
   },
 ];
 
@@ -407,42 +319,28 @@ export const adminKpiMonthly: AdminKpiMonthlyRow[] = rawAdminKpiMonthly.map(
   (row) => ({
     yyyymm: row.yyyymm,
     visits: Number(row.visits),
-    shopClicks: Number(row.shop_clicks),
     langDist: parseJsonField(row.lang_dist, {} as LanguageDistribution),
     ageDist: parseJsonField(row.age_dist, {} as Record<string, number>),
     createdAt: row.created_at,
+    craftAccesses: parseJsonField(row.craft_accesses, {} as Record<string, number>),
+    craftShopClicks: parseJsonField(row.craft_shop_clicks, {} as Record<string, number>),
+    totalShopClicks: row.total_shop_clicks,
   })
 );
 
 export const adminChatAggregatesMonthly: AdminChatAggregatesMonthlyRow[] =
-  rawAdminChatAggregatesMonthly.map((row) => {
-    const keywordCounts = parseJsonField(row.top_keywords, [] as { k: string; c: number }[]);
-    const intentCounts = parseJsonField(row.top_intents, [] as { i: string; c: number }[]);
-    const qaItems = parseJsonField(row.sample_qa, [] as { q: string }[]);
-
-    return {
-      craftId: Number(row.craft_id),
-      yyyymm: row.yyyymm,
-      volume: Number(row.volume),
-      langUiDist: parseJsonField(row.lang_ui_dist, {} as LanguageDistribution),
-      langDetectedDist: parseJsonField(
-        row.lang_detected_dist,
-        {} as LanguageDistribution
-      ),
-      topKeywords: keywordCounts.map((item) => ({
-        keyword: item.k,
-        count: item.c,
-      })),
-      topIntents: intentCounts.map((item) => ({
-        intent: item.i,
-        count: item.c,
-      })),
-      sampleQa: qaItems.map((item) => ({
-        question: item.q,
-      })),
-      updatedAt: row.updated_at,
-    };
-  });
+  rawAdminChatAggregatesMonthly.map((row) => ({
+    yyyymm: row.yyyymm,
+    volumeTotal: Number(row.volume_total),
+    volumeByCraft: parseJsonField(row.volume_by_craft, {} as Record<string, number>),
+    langUiDist: parseJsonField(row.lang_ui_dist, {} as LanguageDistribution),
+    topIntentsOverall: parseJsonField(row.top_intents_overall, [] as IntentCount[]),
+    topIntentsByCraft: parseJsonField(
+      row.top_intents_by_craft,
+      {} as Record<string, IntentCount[]>
+    ),
+    updatedAt: row.updated_at,
+  }));
 
 export const adminChatSummaries: AdminChatSummaryRow[] = rawAdminChatSummaries
   .map((row) => ({
