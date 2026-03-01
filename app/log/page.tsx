@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { resolveDefaultMonthSlug } from "./data";
+import { resolveLatestMonthSlug } from "./data";
 
 export default function LogIndexPage() {
-  const slug = resolveDefaultMonthSlug();
+  const slug = resolveLatestMonthSlug();
   redirect(`/log/${slug}`);
 }

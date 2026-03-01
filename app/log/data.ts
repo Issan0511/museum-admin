@@ -26,7 +26,6 @@ export type OverallChatSummaryData = {
   totalQuestions: number;
   mainThemes: ChatThemeRatio[];
   summary: string;
-  actions: string[];
 };
 
 export type CraftChatSummaryItem = {
@@ -34,7 +33,6 @@ export type CraftChatSummaryItem = {
   volume: number;
   topIntents: ChatThemeRatio[];
   aiSummary: string;
-  actions: string[];
 };
 
 export type MonthlyDashboardSource = {
@@ -185,8 +183,11 @@ const AGE_ORDER = [
 ];
 
 function toMonthLabel(yyyymm: string): string {
-  const [year, month] = yyyymm.split("-");
-  return `${year}年${Number(month)}月`;
+  const [year, monthStart, monthEnd] = yyyymm.split("-");
+  if (monthEnd) {
+    return `${year}年${Number(monthStart)}-${Number(monthEnd)}月`;
+  }
+  return `${year}年${Number(monthStart)}月`;
 }
 
 function getCraftLabel(craftId: string): string {
@@ -195,6 +196,10 @@ function getCraftLabel(craftId: string): string {
 
 function getIntentLabel(intent: string): string {
   return INTENT_LABELS[intent] ?? intent;
+}
+
+function isRankableIntent(intent: string): boolean {
+  return intent !== "other";
 }
 
 function toRatioItems(
@@ -303,7 +308,9 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
           (item) => item.scope.type === "craft" && item.scope.craftId === Number(craftId)
         ) ?? null;
 
-      const intents = (craftIntents[craftId] ?? []).slice(0, 3);
+      const intents = (craftIntents[craftId] ?? [])
+        .filter((intent) => isRankableIntent(intent.intent))
+        .slice(0, 3);
 
       return {
         craft: getCraftLabel(craftId),
@@ -313,10 +320,6 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
           ratio: volume > 0 ? intent.count / volume : 0,
         })),
         aiSummary: summary?.summaryMd ?? "要約データなし",
-        actions:
-          summary?.recommendations.length
-            ? summary.recommendations
-            : ["関連コンテンツの改善案を作成"],
       };
     });
 
@@ -355,15 +358,14 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
     ageData: toOrderedRatioItems(kpi.ageDist, AGE_LABELS, AGE_ORDER),
     overallChatSummary: {
       totalQuestions,
-      mainThemes: (chatAggregate?.topIntentsOverall ?? []).slice(0, 4).map((intent) => ({
-        label: getIntentLabel(intent.intent),
-        ratio: totalQuestions > 0 ? intent.count / totalQuestions : 0,
-      })),
+      mainThemes: (chatAggregate?.topIntentsOverall ?? [])
+        .filter((intent) => isRankableIntent(intent.intent))
+        .slice(0, 4)
+        .map((intent) => ({
+          label: getIntentLabel(intent.intent),
+          ratio: totalQuestions > 0 ? intent.count / totalQuestions : 0,
+        })),
       summary: overallSummary?.summaryMd ?? "全体サマリーはありません。",
-      actions:
-        overallSummary?.recommendations.length
-          ? overallSummary.recommendations
-          : ["次月データで改善アクションを生成"],
     },
     craftChatSummaries,
   };
@@ -391,12 +393,16 @@ export const getPreviousMonthSlug = (baseDate = new Date()) => {
   return `${year}-${month}`;
 };
 
+export const resolveLatestMonthSlug = (fallbackDate = new Date()) => {
+  const latest = [...availableMonths].sort().at(-1);
+  return latest ?? getPreviousMonthSlug(fallbackDate);
+};
+
 export const resolveDefaultMonthSlug = (baseDate = new Date()) => {
   const candidate = getPreviousMonthSlug(baseDate);
   if (monthlyDashboardData[candidate]) {
     return candidate;
   }
 
-  const latest = [...availableMonths].sort().at(-1);
-  return latest ?? candidate;
+  return resolveLatestMonthSlug(baseDate);
 };

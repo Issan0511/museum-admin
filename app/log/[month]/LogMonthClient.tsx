@@ -181,14 +181,6 @@ function OverallChatSummaryView({
         <div className="mb-1 text-sm text-white/70">AI要約</div>
         <p className="text-sm leading-relaxed text-white/90">{data.summary}</p>
       </div>
-      <div>
-        <div className="mb-1 text-sm text-white/70">提案・改善点</div>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-white/90">
-          {data.actions.map((a) => (
-            <li key={a}>{a}</li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 }
@@ -233,9 +225,6 @@ function CraftChatSummaryList({
               <div className="mb-1 text-sm text-white/70">AI要約</div>
               <p className="text-sm leading-relaxed text-white/90">{it.aiSummary}</p>
             </div>
-          </div>
-          <div className="mt-3 text-sm text-white/70">
-            提案：{it.actions.join("／")}
           </div>
         </div>
       ))}
@@ -289,7 +278,7 @@ export default function LogMonthClient({ month }: LogMonthClientProps) {
         <div className="space-y-3 text-center">
           <p className="text-lg font-semibold">対象の月データが見つかりません。</p>
           <div className="text-sm text-white/70">
-            メニューから10月または11月を選択してください。
+            メニューから対象月を選択してください。
           </div>
           <div className="flex justify-center gap-3">
             {availableMonths.map((menuMonth) => (

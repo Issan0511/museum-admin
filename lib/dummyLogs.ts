@@ -59,6 +59,7 @@ type RawKpiRow = {
   craft_accesses: string;
   craft_shop_clicks: string;
   total_shop_clicks: number | null;
+  updated_at_date: string;
 };
 
 type RawChatAggregateRow = {
@@ -126,6 +127,7 @@ const rawAdminKpiMonthly: RawKpiRow[] = [
     craft_accesses: "{}",
     craft_shop_clicks: "{}",
     total_shop_clicks: 27,
+    updated_at_date: "2025-09-30",
   },
   {
     yyyymm: "2025-10",
@@ -137,16 +139,18 @@ const rawAdminKpiMonthly: RawKpiRow[] = [
     craft_accesses: "{}",
     craft_shop_clicks: "{}",
     total_shop_clicks: 33,
+    updated_at_date: "2025-10-31",
   },
   {
-    yyyymm: "2026-01",
-    visits: "245",
-    lang_dist: '{"en": 35, "es": 15, "fr": 2, "ja": 185, "zh": 8}',
-    age_dist: '{"10s": 6, "20s": 84, "30s": 40, "40s": 11, "50s": 28, "60s": 15, "70s": 4, "80s_plus": 4, "under_10": 53}',
-    created_at: "2026-02-07 05:17:08.86932+00",
-    craft_accesses: '{"1": 32, "2": 1, "3": 5, "5": 2, "6": 1, "9": 4, "10": 1, "11": 2, "13": 21, "14": 2, "15": 4, "16": 3, "17": 42, "18": 2, "19": 10, "21": 3, "22": 1, "23": 6, "24": 1, "27": 2, "31": 6, "32": 1, "34": 4, "35": 4, "36": 2, "40": 2, "41": 1, "42": 8, "43": 1, "45": 2, "46": 1, "49": 1, "50": 2, "51": 1, "53": 1, "54": 1, "55": 3, "56": 2, "57": 1, "58": 1, "60": 1, "61": 1, "62": 1, "63": 15, "65": 2, "66": 2, "67": 1, "69": 11, "71": 3, "72": 4, "73": 1}',
-    craft_shop_clicks: '{"1": 3, "13": 1, "17": 1, "31": 1, "50": 1, "63": 2, "72": 1}',
+    yyyymm: "2026-01-02",
+    visits: "339",
+    lang_dist: '{"ja": 232, "ko": 1, "en": 69, "fr": 6, "zh": 13, "es": 18}',
+    age_dist: '{"20s": 81, "30s": 55, "under_10": 57, "40s": 35, "10s": 10, "70s": 16, "80s_plus": 7, "60s": 34, "50s": 44}',
+    created_at: "2026-02-26 00:27:43.093751+00",
+    craft_accesses: '{"41": 2, "13": 21, "21": 4, "23": 6, "32": 1, "9": 5, "27": 5, "57": 2, "47": 1, "42": 10, "15": 7, "2": 1, "69": 14, "72": 9, "51": 3, "50": 6, "6": 1, "10": 1, "60": 1, "18": 5, "59": 1, "45": 2, "46": 1, "63": 18, "52": 1, "7": 1, "22": 2, "65": 2, "66": 6, "49": 1, "34": 6, "31": 6, "40": 2, "24": 2, "35": 4, "61": 1, "3": 8, "56": 2, "74": 2, "73": 3, "38": 2, "58": 1, "67": 1, "16": 7, "5": 4, "17": 59, "1": 43, "14": 9, "62": 1, "55": 3, "19": 11, "54": 3, "36": 2, "43": 3, "68": 1, "20": 1, "71": 4, "11": 3, "53": 1}',
+    craft_shop_clicks: '{"13": 1, "50": 1, "15": 1, "31": 1, "63": 2, "1": 4, "74": 1, "17": 2, "72": 1, "51": 1}',
     total_shop_clicks: null,
+    updated_at_date: "2026-02-26",
   },
 ];
 
@@ -170,13 +174,13 @@ const rawAdminChatAggregatesMonthly: RawChatAggregateRow[] = [
     updated_at: "2025-11-12 02:56:42.939094+00:00",
   },
   {
-    yyyymm: "2026-01",
-    volume_total: "93",
-    volume_by_craft: '{"1": 7, "9": 1, "13": 23, "15": 1, "16": 1, "17": 10, "19": 2, "23": 1, "34": 2, "35": 2, "40": 5, "42": 4, "49": 5, "56": 2, "61": 1, "63": 4, "69": 16, "71": 2, "73": 4}',
-    lang_ui_dist: '{"es": 11, "ja": 82}',
-    top_intents_overall: '[{"count": 37, "intent": "history"}, {"count": 23, "intent": "other"}, {"count": 10, "intent": "process"}, {"count": 7, "intent": "material"}, {"count": 5, "intent": "products"}, {"count": 5, "intent": "other_craft"}, {"count": 3, "intent": "purchase"}, {"count": 2, "intent": "access_location"}, {"count": 1, "intent": "price"}]',
-    top_intents_by_craft: '{"1": [{"count": 4, "intent": "history"}, {"count": 1, "intent": "process"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other"}], "9": [{"count": 1, "intent": "history"}], "13": [{"count": 18, "intent": "history"}, {"count": 2, "intent": "process"}, {"count": 1, "intent": "price"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other_craft"}], "15": [{"count": 1, "intent": "purchase"}], "16": [{"count": 1, "intent": "purchase"}], "17": [{"count": 4, "intent": "history"}, {"count": 2, "intent": "other"}, {"count": 2, "intent": "products"}, {"count": 1, "intent": "purchase"}, {"count": 1, "intent": "other_craft"}], "19": [{"count": 1, "intent": "history"}, {"count": 1, "intent": "access_location"}], "23": [{"count": 1, "intent": "process"}], "34": [{"count": 1, "intent": "process"}, {"count": 1, "intent": "material"}], "35": [{"count": 1, "intent": "other"}, {"count": 1, "intent": "process"}], "40": [{"count": 5, "intent": "other"}], "42": [{"count": 1, "intent": "products"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "history"}], "49": [{"count": 2, "intent": "other"}, {"count": 1, "intent": "products"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "history"}], "56": [{"count": 2, "intent": "process"}], "61": [{"count": 1, "intent": "products"}], "63": [{"count": 1, "intent": "history"}, {"count": 1, "intent": "access_location"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "process"}], "69": [{"count": 12, "intent": "other"}, {"count": 2, "intent": "history"}, {"count": 1, "intent": "process"}, {"count": 1, "intent": "other_craft"}], "71": [{"count": 2, "intent": "history"}], "73": [{"count": 2, "intent": "material"}, {"count": 2, "intent": "history"}]}',
-    updated_at: "2026-02-07 06:13:14.719+00",
+    yyyymm: "2026-01-02",
+    volume_total: "105",
+    volume_by_craft: '{"1": 7, "3": 1, "9": 1, "13": 23, "15": 2, "16": 1, "17": 10, "18": 1, "19": 2, "23": 1, "24": 2, "34": 2, "35": 2, "40": 5, "42": 4, "43": 1, "47": 1, "49": 5, "54": 1, "56": 2, "57": 1, "61": 1, "63": 6, "68": 1, "69": 16, "71": 2, "73": 4}',
+    lang_ui_dist: '{"es": 11, "ja": 87, "en": 7}',
+    top_intents_overall: '[{"count": 38, "intent": "history"}, {"count": 24, "intent": "other"}, {"count": 11, "intent": "process"}, {"count": 8, "intent": "material"}, {"count": 7, "intent": "overview"}, {"count": 5, "intent": "other_craft"}, {"count": 5, "intent": "products"}, {"count": 4, "intent": "purchase"}, {"count": 2, "intent": "access_location"}, {"count": 1, "intent": "price"}]',
+    top_intents_by_craft: '{"1": [{"count": 4, "intent": "history"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other"}, {"count": 1, "intent": "process"}], "3": [{"count": 1, "intent": "overview"}], "9": [{"count": 1, "intent": "history"}], "13": [{"count": 18, "intent": "history"}, {"count": 2, "intent": "process"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "price"}], "15": [{"count": 1, "intent": "overview"}, {"count": 1, "intent": "purchase"}], "16": [{"count": 1, "intent": "purchase"}], "17": [{"count": 4, "intent": "history"}, {"count": 2, "intent": "other"}, {"count": 2, "intent": "products"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "purchase"}], "18": [{"count": 1, "intent": "overview"}], "19": [{"count": 1, "intent": "access_location"}, {"count": 1, "intent": "history"}], "23": [{"count": 1, "intent": "process"}], "24": [{"count": 1, "intent": "material"}, {"count": 1, "intent": "other"}], "34": [{"count": 1, "intent": "material"}, {"count": 1, "intent": "process"}], "35": [{"count": 1, "intent": "other"}, {"count": 1, "intent": "process"}], "40": [{"count": 5, "intent": "other"}], "42": [{"count": 1, "intent": "history"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "products"}], "43": [{"count": 1, "intent": "overview"}], "47": [{"count": 1, "intent": "overview"}], "49": [{"count": 2, "intent": "other"}, {"count": 1, "intent": "history"}, {"count": 1, "intent": "material"}, {"count": 1, "intent": "products"}], "54": [{"count": 1, "intent": "overview"}], "56": [{"count": 2, "intent": "process"}], "57": [{"count": 1, "intent": "process"}], "61": [{"count": 1, "intent": "products"}], "63": [{"count": 2, "intent": "history"}, {"count": 1, "intent": "access_location"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "process"}, {"count": 1, "intent": "purchase"}], "68": [{"count": 1, "intent": "overview"}], "69": [{"count": 12, "intent": "other"}, {"count": 2, "intent": "history"}, {"count": 1, "intent": "other_craft"}, {"count": 1, "intent": "process"}], "71": [{"count": 2, "intent": "history"}], "73": [{"count": 2, "intent": "history"}, {"count": 2, "intent": "material"}]}',
+    updated_at: "2026-02-26 00:50:47.876+00",
   },
 ];
 
@@ -312,6 +316,90 @@ const rawAdminChatSummaries: RawChatSummaryRow[] = [
     model_version: "gpt-5-mini-2025-10",
     prompt_version: "v1",
     created_at: "2025-11-12 02:56:42.952158+00:00",
+  },
+  {
+    scope: "overall",
+    period: "2026-01-02",
+    summary_md:
+      "歴史・由来に関する質問が最も多く、特に京焼・西陣織・京人形など主要工芸の「いつからあるのか」「何が違うのか」といった基礎理解への関心が高い。次いで、作り方・工程などの製作プロセス、購入場所や価格といった実用情報への質問が見られる。定義確認型の質問が全体傾向として目立つ。",
+    recommendations_md:
+      "- 歴史・定義・違いを比較できる導入コンテンツを先頭に配置\n- 京焼を起点に主要工芸への横断導線を強化\n- 工程・購入場所・価格の実務情報をFAQで即参照可能にする",
+    data_hash: "hash_overall_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:13",
+    period: "2026-01-02",
+    summary_md:
+      "京焼では定義・歴史・清水焼との違いに関する質問が中心。文化財指定、職人減少、価格、職人になる方法まで関心が広く、基礎説明と比較解説への需要が高い。",
+    recommendations_md:
+      "- 京焼と清水焼の違いを最短で理解できる比較カードを配置\n- 歴史年表と文化財指定情報を1画面で提示\n- 価格帯と学び方（職人への道）をFAQ化する",
+    data_hash: "hash_craft_13_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:1",
+    period: "2026-01-02",
+    summary_md:
+      "西陣織は歴史と定義を問う質問が中心で、加えて大きさや職人数など産業規模への関心が見られる。基礎解説に現況データを添える構成が有効。",
+    recommendations_md:
+      "- 歴史・定義の基礎解説を冒頭に固定\n- 規模感（職人数・生産関連指標）を見える化\n- 初学者向けに専門用語の言い換えを追加",
+    data_hash: "hash_craft_1_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:17",
+    period: "2026-01-02",
+    summary_md:
+      "京人形は歴史に関する質問が主で、兜・雛人形との関係確認や購入場所の問い合わせもある。製品カテゴリ説明と販売導線の明確化が有効。",
+    recommendations_md:
+      "- 京人形内のカテゴリ関係（兜・雛人形）を図解\n- 歴史背景の要点を短文で提示\n- 購入先情報を地域別に整理して導線を明確化",
+    data_hash: "hash_craft_17_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:63",
+    period: "2026-01-02",
+    summary_md:
+      "伏見人形では歴史に加え、工房数・製作主体・購入場所など具体情報への質問が分散。地域工芸としての背景と現存体制の整理が求められる。",
+    recommendations_md:
+      "- 歴史と地域性をセットで説明する導入を用意\n- 工房・作り手情報を一覧化して更新頻度を明示\n- 購入場所と見学可否を同一導線で案内する",
+    data_hash: "hash_craft_63_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:73",
+    period: "2026-01-02",
+    summary_md:
+      "京たたみでは違いと定義、職人減少への関心が確認できる。伝統技術の特徴説明と現状データ提示を組み合わせると理解が進みやすい。",
+    recommendations_md:
+      "- 京たたみの特徴と差異を比較形式で提示\n- 職人動向などの現状データを定期更新で掲示\n- 手入れ方法や選び方を実用FAQとして追加",
+    data_hash: "hash_craft_73_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
+  },
+  {
+    scope: "craft:69",
+    period: "2026-01-02",
+    summary_md:
+      "京菓子では担い手減少に関する質問が見られ、産業継承や市場動向への説明ニーズがある。背景説明と継承事例の提示が有効。",
+    recommendations_md:
+      "- 担い手減少の背景を要点整理して提示\n- 継承事例と現場の取り組みを紹介\n- 市場動向と購入体験をつなぐ導線を強化",
+    data_hash: "hash_craft_69_2026-01-02_other_excluded",
+    model_version: "gpt-5-mini-2025-10",
+    prompt_version: "v2-other-excluded",
+    created_at: "2026-03-01 00:00:00+00:00",
   },
 ];
 
