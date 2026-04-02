@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,9 +15,8 @@ import {
 } from "recharts";
 
 import {
-  MonthlyDashboardData,
-  availableMonths,
-  monthlyDashboardData,
+  type AvailableMonthOption,
+  type MonthlyDashboardData,
 } from "../data";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#00c49f"];
@@ -168,14 +167,18 @@ function OverallChatSummaryView({
       </div>
       <div>
         <div className="mb-1 text-sm text-white/70">主な質問テーマ</div>
-        <ul className="space-y-1 text-sm">
-          {data.mainThemes.map((t) => (
-            <li key={t.label} className="flex items-center justify-between">
-              <span>{t.label}</span>
-              <span className="text-white/60">{Math.round(t.ratio * 100)}%</span>
-            </li>
-          ))}
-        </ul>
+        {data.mainThemes.length > 0 ? (
+          <ul className="space-y-1 text-sm">
+            {data.mainThemes.map((t) => (
+              <li key={t.label} className="flex items-center justify-between">
+                <span>{t.label}</span>
+                <span className="text-white/60">{Math.round(t.ratio * 100)}%</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-white/60">質問テーマデータはありません。</p>
+        )}
       </div>
       <div>
         <div className="mb-1 text-sm text-white/70">AI要約</div>
@@ -191,6 +194,10 @@ function CraftChatSummaryList({
   items: MonthlyDashboardData["craftChatSummaries"];
 }) {
   const sortedItems = [...items].sort((a, b) => b.volume - a.volume);
+
+  if (sortedItems.length === 0) {
+    return <p className="text-sm text-white/60">要約データはありません。</p>;
+  }
 
   return (
     <div className="space-y-3">
@@ -234,9 +241,11 @@ function CraftChatSummaryList({
 
 function MonthMenu({
   currentMonth,
+  availableMonths,
   onClose,
 }: {
   currentMonth: string;
+  availableMonths: AvailableMonthOption[];
   onClose: () => void;
 }) {
   return (
@@ -245,14 +254,14 @@ function MonthMenu({
       <div className="divide-y divide-white/5">
         {availableMonths.map((menuMonth) => (
           <Link
-            key={menuMonth}
-            href={`/log/${menuMonth}`}
+            key={menuMonth.slug}
+            href={`/log/${menuMonth.slug}`}
             className={`block px-4 py-3 text-sm transition hover:bg-white/5 ${
-              menuMonth === currentMonth ? "bg-white/10 font-semibold" : ""
+              menuMonth.slug === currentMonth ? "bg-white/10 font-semibold" : ""
             }`}
             onClick={onClose}
           >
-            {monthlyDashboardData[menuMonth]?.monthLabel ?? menuMonth}
+            {menuMonth.label}
           </Link>
         ))}
       </div>
@@ -262,10 +271,15 @@ function MonthMenu({
 
 type LogMonthClientProps = {
   month: string;
+  data: MonthlyDashboardData | null;
+  availableMonths: AvailableMonthOption[];
 };
 
-export default function LogMonthClient({ month }: LogMonthClientProps) {
-  const data = useMemo(() => monthlyDashboardData[month], [month]);
+export default function LogMonthClient({
+  month,
+  data,
+  availableMonths,
+}: LogMonthClientProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -283,11 +297,11 @@ export default function LogMonthClient({ month }: LogMonthClientProps) {
           <div className="flex justify-center gap-3">
             {availableMonths.map((menuMonth) => (
               <Link
-                key={menuMonth}
-                href={`/log/${menuMonth}`}
+                key={menuMonth.slug}
+                href={`/log/${menuMonth.slug}`}
                 className="rounded-full bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
               >
-                {monthlyDashboardData[menuMonth]?.monthLabel ?? menuMonth}
+                {menuMonth.label}
               </Link>
             ))}
           </div>
@@ -319,6 +333,7 @@ export default function LogMonthClient({ month }: LogMonthClientProps) {
             {menuOpen ? (
               <MonthMenu
                 currentMonth={month}
+                availableMonths={availableMonths}
                 onClose={() => setMenuOpen(false)}
               />
             ) : null}

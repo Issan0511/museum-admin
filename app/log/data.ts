@@ -1,10 +1,7 @@
-import {
-  adminChatAggregatesMonthly,
-  adminChatSummaries,
-  adminKpiMonthly,
-  type AdminChatAggregatesMonthlyRow,
-  type AdminChatSummaryRow,
-  type AdminKpiMonthlyRow,
+import type {
+  AdminChatAggregatesMonthlyRow,
+  AdminChatSummaryRow,
+  AdminKpiMonthlyRow,
 } from "@/lib/dummyLogs";
 
 export type KpiCard = {
@@ -51,6 +48,17 @@ export type MonthlyDashboardData = {
   ageData: SimpleRatioItem[];
   overallChatSummary: OverallChatSummaryData;
   craftChatSummaries: CraftChatSummaryItem[];
+};
+
+export type AvailableMonthOption = {
+  slug: string;
+  label: string;
+};
+
+type DashboardSourceRows = {
+  kpiRows: AdminKpiMonthlyRow[];
+  chatAggregateRows: AdminChatAggregatesMonthlyRow[];
+  chatSummaryRows: AdminChatSummaryRow[];
 };
 
 const CRAFT_LABELS: Record<string, string> = {
@@ -267,20 +275,17 @@ function sumRecordValues(record: Record<string, number>): number {
   return Object.values(record).reduce((sum, value) => sum + value, 0);
 }
 
-const kpiByMonth = new Map(adminKpiMonthly.map((row) => [row.yyyymm, row]));
-const aggregateByMonth = new Map(
-  adminChatAggregatesMonthly.map((row) => [row.yyyymm, row])
-);
-const summariesByMonth = adminChatSummaries.reduce<
-  Record<string, AdminChatSummaryRow[]>
->((acc, row) => {
-  const current = acc[row.period] ?? [];
-  current.push(row);
-  acc[row.period] = current;
-  return acc;
-}, {});
-
-function buildMonthData(month: string): MonthlyDashboardData | null {
+function buildMonthData({
+  month,
+  kpiByMonth,
+  aggregateByMonth,
+  summariesByMonth,
+}: {
+  month: string;
+  kpiByMonth: Map<string, AdminKpiMonthlyRow>;
+  aggregateByMonth: Map<string, AdminChatAggregatesMonthlyRow>;
+  summariesByMonth: Record<string, AdminChatSummaryRow[]>;
+}): MonthlyDashboardData | null {
   const kpi = kpiByMonth.get(month);
   if (!kpi) {
     return null;
@@ -305,7 +310,8 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
     .map(([craftId, volume]) => {
       const summary =
         chatSummaries.find(
-          (item) => item.scope.type === "craft" && item.scope.craftId === Number(craftId)
+          (item) =>
+            item.scope.type === "craft" && item.scope.craftId === Number(craftId)
         ) ?? null;
 
       const intents = (craftIntents[craftId] ?? [])
@@ -319,7 +325,7 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
           label: getIntentLabel(intent.intent),
           ratio: volume > 0 ? intent.count / volume : 0,
         })),
-        aiSummary: summary?.summaryMd ?? "要約データなし",
+        aiSummary: summary?.summaryMd ?? "要約データはありません。",
       };
     });
 
@@ -371,20 +377,55 @@ function buildMonthData(month: string): MonthlyDashboardData | null {
   };
 }
 
-const allMonths = Array.from(
-  new Set([...adminKpiMonthly.map((row) => row.yyyymm)])
-).sort();
+export function buildMonthlyDashboardData({
+  kpiRows,
+  chatAggregateRows,
+  chatSummaryRows,
+}: DashboardSourceRows): Record<string, MonthlyDashboardData> {
+  const kpiByMonth = new Map(kpiRows.map((row) => [row.yyyymm, row]));
+  const aggregateByMonth = new Map(
+    chatAggregateRows.map((row) => [row.yyyymm, row])
+  );
+  const summariesByMonth = chatSummaryRows.reduce<Record<string, AdminChatSummaryRow[]>>(
+    (acc, row) => {
+      const current = acc[row.period] ?? [];
+      current.push(row);
+      acc[row.period] = current;
+      return acc;
+    },
+    {}
+  );
 
-export const monthlyDashboardData: Record<string, MonthlyDashboardData> = allMonths
-  .map((month) => [month, buildMonthData(month)] as const)
-  .reduce<Record<string, MonthlyDashboardData>>((acc, [month, data]) => {
-    if (data) {
-      acc[month] = data;
-    }
-    return acc;
-  }, {});
+  const allMonths = Array.from(new Set(kpiRows.map((row) => row.yyyymm))).sort();
 
-export const availableMonths = Object.keys(monthlyDashboardData).sort();
+  return allMonths
+    .map((month) => [
+      month,
+      buildMonthData({
+        month,
+        kpiByMonth,
+        aggregateByMonth,
+        summariesByMonth,
+      }),
+    ] as const)
+    .reduce<Record<string, MonthlyDashboardData>>((acc, [month, data]) => {
+      if (data) {
+        acc[month] = data;
+      }
+      return acc;
+    }, {});
+}
+
+export function buildAvailableMonthOptions(
+  monthlyDashboardData: Record<string, MonthlyDashboardData>
+): AvailableMonthOption[] {
+  return Object.keys(monthlyDashboardData)
+    .sort()
+    .map((slug) => ({
+      slug,
+      label: monthlyDashboardData[slug]?.monthLabel ?? slug,
+    }));
+}
 
 export const getPreviousMonthSlug = (baseDate = new Date()) => {
   const previous = new Date(baseDate.getFullYear(), baseDate.getMonth() - 1, 1);
@@ -393,16 +434,10 @@ export const getPreviousMonthSlug = (baseDate = new Date()) => {
   return `${year}-${month}`;
 };
 
-export const resolveLatestMonthSlug = (fallbackDate = new Date()) => {
+export const resolveLatestMonthSlug = (
+  availableMonths: string[],
+  fallbackDate = new Date()
+) => {
   const latest = [...availableMonths].sort().at(-1);
   return latest ?? getPreviousMonthSlug(fallbackDate);
-};
-
-export const resolveDefaultMonthSlug = (baseDate = new Date()) => {
-  const candidate = getPreviousMonthSlug(baseDate);
-  if (monthlyDashboardData[candidate]) {
-    return candidate;
-  }
-
-  return resolveLatestMonthSlug(baseDate);
 };

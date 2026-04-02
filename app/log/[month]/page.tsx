@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 
 import LogMonthClient from "./LogMonthClient";
-import { monthlyDashboardData, resolveLatestMonthSlug } from "../data";
+import { getLogDashboardMonthData } from "../server-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function LogMonthPage({
   params,
@@ -9,8 +12,18 @@ export default async function LogMonthPage({
   params: Promise<{ month: string }>;
 }) {
   const { month } = await params;
-  if (!monthlyDashboardData[month]) {
-    redirect(`/log/${resolveLatestMonthSlug()}`);
+  const { data, availableMonthOptions, latestMonth } =
+    await getLogDashboardMonthData(month);
+
+  if (!data) {
+    redirect(`/log/${latestMonth}`);
   }
-  return <LogMonthClient month={month} />;
+
+  return (
+    <LogMonthClient
+      month={month}
+      data={data}
+      availableMonths={availableMonthOptions}
+    />
+  );
 }
