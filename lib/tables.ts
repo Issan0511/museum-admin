@@ -48,6 +48,7 @@ const TABLES: TableMetadata[] = [
     displayName: "イベント",
     columns: [
       "id",
+      "display_order",
       "name_ja",
       "name_en",
       "name_zh",
